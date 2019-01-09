@@ -7,7 +7,7 @@ For example, this can be useful to switch between headphones and speakers if the
 
 # Installation
 
-Download the `com.fredemmott.audiooutputswitch.streamDeckPlugin` file from the releases page, and double-click it.
+Download the `com.fredemmott.audiooutputswitch.streamDeckPlugin` file from [the releases page](https://github.com/fredemmott/StreamDeck-AudioOutputSwitcher/release), and double-click it.
 
 # Notes
 
