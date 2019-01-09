@@ -9,12 +9,12 @@
 
 <body>
 	<div class="sdpi-wrapper hidden" id="mainWrapper">
-		<div type="select" class="sdpi-item">
+		<div type="select" class="sdpi-item" id="primaryDeviceDiv">
 			<div class="sdpi-item-label">Primary</div>
 			<select class="sdpi-item-value select" id="primaryDevice" onchange="saveSettings();">
 			</select>
 		</div>
-		<div type="select" class="sdpi-item">
+		<div type="select" class="sdpi-item" id="secondaryDeviceDiv">
 			<div class="sdpi-item-label">Secondary</div>
 			<select class="sdpi-item-value select" id="secondaryDevice" onchange="saveSettings();">
 			</select>
@@ -76,6 +76,12 @@
 			uuid = jsonObj.uuid;
 			actionInfo = jsonObj.actionInfo.action;
 			ctx = jsonObj.actionInfo.context;
+
+			
+			if (actionInfo == "com.fredemmott.audiooutputswitch.set") {
+				document.querySelector('#primaryDeviceDiv .sdpi-item-label').innerText = 'Device';
+				document.getElementById('secondaryDeviceDiv').style.display = 'none';
+			}
 
 			// request settings and list of devices
 			$SD.api.sendToPlugin(uuid, actionInfo, {event: "getData"});

@@ -98,13 +98,20 @@ void MyStreamDeckPlugin::UpdateTimer()
 		for (const std::string& context : mVisibleContexts)
 		{
 			const auto primary = mPrimaryDevices[context];
-			const auto secondary = mSecondaryDevices[context];
-			if (currentDeviceId == primary) {
-				mConnectionManager->SetState(0, context);
-			} else if (currentDeviceId == secondary) {
-				mConnectionManager->SetState(1, context);
-			}else {
-				mConnectionManager->ShowAlertForContext(context);
+			if (mActions[context] == "com.fredemmott.audiooutputswitch.toggle") {
+				const auto secondary = mSecondaryDevices[context];
+				if (currentDeviceId == primary) {
+					mConnectionManager->SetState(0, context);
+				}
+				else if (currentDeviceId == secondary) {
+					mConnectionManager->SetState(1, context);
+				}
+				else {
+					mConnectionManager->ShowAlertForContext(context);
+				}
+			}
+			else if (mActions[context] == "com.fredemmott.audiooutputswitch.set") {
+				mConnectionManager->SetState(currentDeviceId == primary ? 0 : 1, context);
 			}
 		}
 		mVisibleContextsMutex.unlock();
@@ -116,12 +123,15 @@ void MyStreamDeckPlugin::KeyDownForAction(const std::string& inAction, const std
 	const auto state = EPLJSONUtils::GetIntByName(inPayload, "state");
 	// this looks inverted - but if state is 0, we want to move to state 1, so we want the secondary devices.
 	// if state is 1, we want state 0, so we want the primary device
-	const auto deviceId = state != 0 ? mPrimaryDevices[inContext] : mSecondaryDevices[inContext];
+	const auto deviceId = (state != 0 || inAction == "com.fredemmott.audiooutputswitch.set")
+		? mPrimaryDevices[inContext]
+		: mSecondaryDevices[inContext];
 	if (deviceId == "") {
 		return;
 	}
 	// We lock the mutex to stop the display flickering if we come along at the same time as the timer
 	mVisibleContextsMutex.lock();
+
 	const auto currentDeviceId = GetDefaultAudioDeviceID();
 	SetDefaultAudioDeviceID(deviceId);
 }
@@ -139,6 +149,7 @@ void MyStreamDeckPlugin::WillAppearForAction(const std::string& inAction, const 
 	mVisibleContexts.insert(inContext);
 	json settings;
 	EPLJSONUtils::GetObjectByName(inPayload, "settings", settings);
+	mActions[inContext] = inAction;
 	mPrimaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "primary", GetDefaultAudioDeviceID());
 	mSecondaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "secondary");
 

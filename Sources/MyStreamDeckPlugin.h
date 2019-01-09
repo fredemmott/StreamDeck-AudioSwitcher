@@ -41,6 +41,7 @@ private:
 	std::set<std::string> mVisibleContexts;
 	std::map<std::string, std::string> mPrimaryDevices;
 	std::map<std::string, std::string> mSecondaryDevices;
+	std::map<std::string, std::string> mActions;
 	
 	CallBackTimer *mTimer;
 };
