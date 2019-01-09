@@ -1,24 +1,27 @@
 {
   "Actions": [
     {
-      "Icon": "default.png", 
-      "Name": "Mic Mute",
       "States": [
         {
-          "Image": "default.png"
+          "Image": "headphones"
+        },
+		{
+          "Image": "speakers"
         }
       ],
       "SupportedInMultiActions": false,
-	  "Name": "Mic Mute",
-      "Tooltip": "This action toggles the system microphone mute",
-      "UUID": "com.fredemmott.micmutetoggle.toggle"
+	  "Icon": "headphones",
+	  "Name": "Audio Output",
+      "Tooltip": "Switch between two audio outputs.",
+      "UUID": "com.fredemmott.audiooutputswitch.toggle"
     }
   ], 
   "Author": "Fred Emmott", 
-  "CodePathWin": "sdmicmute.exe", 
-  "Description": "Toggle the system microphone mute setting.",
-  "Name": "Mic Mute", 
-  "Icon": "mic-unknown.png", 
+  "CodePathWin": "sdaudioswitch.exe", 
+  "Description": "Switch between two audio outputs.",
+  "Name": "Audio Output",
+  "PropertyInspectorPath": "propertyinspector/index.html",
+  "Icon": "default.png", 
   "Version": "1.0",
   "OS": [
     {

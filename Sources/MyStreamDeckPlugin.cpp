@@ -13,46 +13,9 @@
 #include "MyStreamDeckPlugin.h"
 #include <atomic>
 
-#include "MicMuteToggle.h"
-#include "Windows/resource.h"
-#include <wincrypt.h>
+#include "AudioFunctions.h"
 #include "Common/ESDConnectionManager.h"
-
-namespace {
-	std::string ResourceAsBase64(int resource) {
-		const auto res = FindResource(nullptr, MAKEINTRESOURCE(resource), RT_RCDATA);
-		if (!res) {
-			return "";
-		}
-		const auto resHandle = LoadResource(NULL, res);
-		if (!resHandle) {
-			return "";
-		}
-		const BYTE* data = (BYTE*)LockResource(resHandle);
-		const auto size = SizeofResource(NULL, res);
-
-		DWORD b64size;
-		// Find size
-		CryptBinaryToStringA(
-			data,
-			size,
-			CRYPT_STRING_BASE64,
-			nullptr,
-			&b64size
-		);
-		char* b64data = new char[b64size];
-		CryptBinaryToStringA(
-			data,
-			size,
-			CRYPT_STRING_BASE64,
-			b64data,
-			&b64size
-		);
-		auto ret = std::string(b64data, b64size);
-		delete b64data;
-		return ret;
-	}
-};
+#include "Common/EPLJSONUtils.h"
 
 class CallBackTimer
 {
@@ -104,8 +67,6 @@ private:
 
 MyStreamDeckPlugin::MyStreamDeckPlugin()
 {
-	mMutedImage = ResourceAsBase64(IDM_MUTED);
-	mUnmutedImage = ResourceAsBase64(IDM_UNMUTED);
 	CoInitialize(NULL); // initialize COM for the main thread
 	mTimer = new CallBackTimer();
 	mTimer->start(500, [this]()
@@ -133,10 +94,18 @@ void MyStreamDeckPlugin::UpdateTimer()
 	if(mConnectionManager != nullptr)
 	{
 		mVisibleContextsMutex.lock();
-		const bool isMuted = IsMuted();
+		const auto currentDeviceId = GetDefaultAudioDeviceID();
 		for (const std::string& context : mVisibleContexts)
 		{
-			mConnectionManager->SetImage(isMuted ? mMutedImage : mUnmutedImage, context, kESDSDKTarget_HardwareAndSoftware);
+			const auto primary = mPrimaryDevices[context];
+			const auto secondary = mSecondaryDevices[context];
+			if (currentDeviceId == primary) {
+				mConnectionManager->SetState(0, context);
+			} else if (currentDeviceId == secondary) {
+				mConnectionManager->SetState(1, context);
+			}else {
+				mConnectionManager->ShowAlertForContext(context);
+			}
 		}
 		mVisibleContextsMutex.unlock();
 	}
@@ -144,20 +113,35 @@ void MyStreamDeckPlugin::UpdateTimer()
 
 void MyStreamDeckPlugin::KeyDownForAction(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID)
 {
-	SetMuted(MuteBehavior::TOGGLE);
-	UpdateTimer();
+	const auto state = EPLJSONUtils::GetIntByName(inPayload, "state");
+	// this looks inverted - but if state is 0, we want to move to state 1, so we want the secondary devices.
+	// if state is 1, we want state 0, so we want the primary device
+	const auto deviceId = state != 0 ? mPrimaryDevices[inContext] : mSecondaryDevices[inContext];
+	if (deviceId == "") {
+		return;
+	}
+	// We lock the mutex to stop the display flickering if we come along at the same time as the timer
+	mVisibleContextsMutex.lock();
+	const auto currentDeviceId = GetDefaultAudioDeviceID();
+	SetDefaultAudioDeviceID(deviceId);
 }
 
 void MyStreamDeckPlugin::KeyUpForAction(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID)
 {
-	// Nothing to do
+	mVisibleContextsMutex.unlock();
 }
 
 void MyStreamDeckPlugin::WillAppearForAction(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID)
 {
 	// Remember the context
 	mVisibleContextsMutex.lock();
+
 	mVisibleContexts.insert(inContext);
+	json settings;
+	EPLJSONUtils::GetObjectByName(inPayload, "settings", settings);
+	mPrimaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "primary", GetDefaultAudioDeviceID());
+	mSecondaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "secondary");
+
 	mVisibleContextsMutex.unlock();
 }
 
@@ -167,6 +151,35 @@ void MyStreamDeckPlugin::WillDisappearForAction(const std::string& inAction, con
 	mVisibleContextsMutex.lock();
 	mVisibleContexts.erase(inContext);
 	mVisibleContextsMutex.unlock();
+}
+
+void MyStreamDeckPlugin::SendToPlugin(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID)
+{
+	json outPayload;
+
+	const auto event = EPLJSONUtils::GetStringByName(inPayload, "event");
+
+	if (event == "getData") {
+		json outPayload {
+			{ "event", event },
+			{ "allDevices", GetAudioDeviceList() },
+			{ "settings", {
+				{ "primary", mPrimaryDevices[inContext] },
+				{ "secondary", mSecondaryDevices[inContext] }
+			}}
+		};
+		mConnectionManager->SendToPropertyInspector(inAction, inContext, outPayload);
+		return;
+	}
+
+	if (event == "saveSettings") {
+		json settings;
+		EPLJSONUtils::GetObjectByName(inPayload, "settings", settings);
+		mPrimaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "primary");
+		mSecondaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "secondary");
+		mConnectionManager->SetSettings(settings, inContext);
+		return;
+	}
 }
 
 void MyStreamDeckPlugin::DeviceDidConnect(const std::string& inDeviceID, const json &inDeviceInfo)

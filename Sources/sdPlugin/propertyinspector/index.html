@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<title>com.fredemmott.audioutputswitch PI</title>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" href="css/sdpi.css">
+</head>
+
+<body>
+	<div class="sdpi-wrapper hidden" id="mainWrapper">
+		<div type="select" class="sdpi-item">
+			<div class="sdpi-item-label">Primary</div>
+			<select class="sdpi-item-value select" id="primaryDevice" onchange="saveSettings();">
+			</select>
+		</div>
+		<div type="select" class="sdpi-item">
+			<div class="sdpi-item-label">Secondary</div>
+			<select class="sdpi-item-value select" id="secondaryDevice" onchange="saveSettings();">
+			</select>
+		</div>
+	</div>
+
+	<script src="common.js"></script>
+	<script>
+
+		/** Step 1: Subscribe to the 'connected' event
+		 * and call your own initialization method.
+		 * The connected - event is emitted, when StreamDeck 
+		 * has established a connection. 
+		 * The 'connected' event carries a JSON object containing
+		 * necessary information about the connection and the
+		 * inital data.
+		 */
+		var uuid,
+			actionInfo,
+			ctx;
+
+		$SD.on('connected', (jsonObj) => connected(jsonObj));
+		$SD.on('sendToPropertyInspector', (jsonObj) => receivedDataFromPlugin(jsonObj));
+
+		function receivedDataFromPlugin(jsonObj) {
+			const payload = jsonObj['payload'];
+			if (payload['event'] !== "getData") {
+				return;
+			}
+			const settings = payload['settings'];
+			const devices = payload['allDevices'];
+			const primaryId = settings['primary'];
+			const secondaryId = settings['secondary'];
+			
+			const primarySelector = document.getElementById('primaryDevice');
+			const secondarySelector = document.getElementById('secondaryDevice');
+			
+			Object.keys(devices).map(deviceId => {
+				const deviceName = devices[deviceId];
+				const primaryOption = document.createElement("option");
+				primaryOption.setAttribute("value", deviceId);
+				primaryOption.setAttribute("label", deviceName);
+				const secondaryOption = primaryOption.cloneNode();
+				
+				if (primaryId === deviceId) {
+					primaryOption.setAttribute("selected", true);
+				}
+				if (secondaryId === deviceId) {
+					secondaryOption.setAttribute("selected", true);
+				}
+				primarySelector.appendChild(primaryOption);
+				secondarySelector.appendChild(secondaryOption);
+			});
+			document.getElementById('mainWrapper').classList.remove('hidden');
+			saveSettings();
+		}
+
+		function connected(jsonObj) {
+			uuid = jsonObj.uuid;
+			actionInfo = jsonObj.actionInfo.action;
+			ctx = jsonObj.actionInfo.context;
+
+			// request settings and list of devices
+			$SD.api.sendToPlugin(uuid, actionInfo, {event: "getData"});
+		};
+		
+		function saveSettings() {
+			$SD.api.sendToPlugin(uuid, actionInfo, {
+				event: "saveSettings",
+				settings: {
+					primary: document.getElementById('primaryDevice').value,
+					secondary: document.getElementById('secondaryDevice').value
+				}
+			});
+		}
+	</script>
+
+</body>
+
+</html>
