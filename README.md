@@ -1,7 +1,11 @@
 ## Description
 
-StreamDeck-AudioOutputSwitch is a C++ plugin for the Elgato StreamDeck for switching
-the default between two audio devices.
+StreamDeck-AudioSwitch is a C++ plugin for the Elgato StreamDeck for setting the default audio device.
+
+It supports:
+- setting input or output device
+- setting default device or communication device
+- either one-button-per-device, or one button to toggle between two devices
 
 For example, this can be useful to switch between headphones and speakers if they are on different sound cards (e.g. USB speakers or USB headphones).
 
