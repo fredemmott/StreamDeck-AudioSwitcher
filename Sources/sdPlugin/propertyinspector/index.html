@@ -9,6 +9,32 @@
 
 <body>
 	<div class="sdpi-wrapper hidden" id="mainWrapper">
+		<div type="radio" class="sdpi-item">
+			<div class="sdpi-item-label">Direction</div>
+			<div class="sdpi-item-value">
+				<span class="sdpi-item-child">
+					<input id="input" type="radio" name="direction" value="input" onchange="updateDirection();" />
+					<label for="input" class="sdpi-item-label"><span></span>Input</label>
+				</span>
+				<span class="sdpi-item-child">
+					<input id="output" type="radio" name="direction" value="output" onchange="updateDirection();" />
+					<label for="output" class="sdpi-item-label"><span></span>Output</label>
+				</span>
+			</div>
+		</div>
+		<div type="radio" class="sdpi-item">
+			<div class="sdpi-item-label">Role</div>
+			<div class="sdpi-item-value">
+				<span class="sdpi-item-child">
+					<input id="defaultRole" type="radio" name="role" value="default" onchange="saveSettings();" />
+					<label for="defaultRole" class="sdpi-item-label"><span></span>Default</label>
+				</span>
+				<span class="sdpi-item-child">
+					<input id="communicationRole" type="radio" name="role" value="communication" onchange="saveSettings();" />
+					<label for="communicationRole" class="sdpi-item-label"><span></span>Communications</label>
+				</span>
+			</div>
+		</div>
 		<div type="select" class="sdpi-item" id="primaryDeviceDiv">
 			<div class="sdpi-item-label">Primary</div>
 			<select class="sdpi-item-value select" id="primaryDevice" onchange="saveSettings();">
@@ -34,6 +60,9 @@
 		 */
 		var uuid,
 			actionInfo,
+			inputDevices,
+			outputDevices,
+			settings,
 			ctx;
 
 		$SD.on('connected', (jsonObj) => connected(jsonObj));
@@ -44,13 +73,34 @@
 			if (payload['event'] !== "getData") {
 				return;
 			}
-			const settings = payload['settings'];
-			const devices = payload['allDevices'];
+			settings = payload['settings'];
+			
+			const isInput = settings.direction == "input";
+			document.getElementById('input').checked = isInput;
+			document.getElementById('output').checked = !isInput;
+			
+			const isCommunication = settings.role == "communication";
+			document.getElementById('communicationRole').checked = isCommunication;
+			document.getElementById('defaultRole').checked = !isCommunication;
+			
+			inputDevices = payload['inputDevices'];
+			outputDevices = payload['outputDevices'];
+			
+			updateDeviceLists(isInput ? inputDevices : outputDevices);
+			document.getElementById('mainWrapper').classList.remove('hidden');
+			saveSettings();
+		}
+		
+		function updateDeviceLists(devices) {
+			const primarySelector = document.getElementById('primaryDevice');
+			const secondarySelector = document.getElementById('secondaryDevice');
 			const primaryId = settings['primary'];
 			const secondaryId = settings['secondary'];
 			
-			const primarySelector = document.getElementById('primaryDevice');
-			const secondarySelector = document.getElementById('secondaryDevice');
+			while (primarySelector.firstChild) {
+				primarySelector.removeChild(primarySelector.firstChild);
+				secondarySelector.removeChild(secondarySelector.firstChild);
+			}
 			
 			Object.keys(devices).map(deviceId => {
 				const deviceName = devices[deviceId];
@@ -68,7 +118,14 @@
 				primarySelector.appendChild(primaryOption);
 				secondarySelector.appendChild(secondaryOption);
 			});
-			document.getElementById('mainWrapper').classList.remove('hidden');
+		}
+		
+		function updateDirection() {
+			if (document.getElementById('input').checked) {
+				updateDeviceLists(inputDevices);
+			} else {
+				updateDeviceLists(outputDevices);
+			}
 			saveSettings();
 		}
 
@@ -88,13 +145,11 @@
 		};
 		
 		function saveSettings() {
-			$SD.api.sendToPlugin(uuid, actionInfo, {
-				event: "saveSettings",
-				settings: {
-					primary: document.getElementById('primaryDevice').value,
-					secondary: document.getElementById('secondaryDevice').value
-				}
-			});
+			settings.primary = document.getElementById('primaryDevice').value;
+			settings.secondary = document.getElementById('secondaryDevice').value;
+			settings.direction = document.getElementById('input').checked ? 'input' : 'output';
+			settings.role = document.getElementById('defaultRole').checked ? 'default' : 'communication';
+			$SD.api.sendToPlugin(uuid, actionInfo, { event: "saveSettings", settings });
 		}
 	</script>
 

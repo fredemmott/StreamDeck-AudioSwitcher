@@ -3,7 +3,17 @@
 #include <map>
 #include <string>
 
-std::map<std::string, std::string> GetAudioDeviceList();
+enum class Role {
+	DEFAULT,
+	COMMUNICATION,
+};
 
-std::string GetDefaultAudioDeviceID();
-void SetDefaultAudioDeviceID(const std::string& deviceID);
+enum class Direction {
+	OUTPUT,
+	INPUT,
+};
+
+std::map<std::string, std::string> GetAudioDeviceList(Direction);
+
+std::string GetDefaultAudioDeviceID(Direction, Role);
+void SetDefaultAudioDeviceID(Direction, Role, const std::string& deviceID);

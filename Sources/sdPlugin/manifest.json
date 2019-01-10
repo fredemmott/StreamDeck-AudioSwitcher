@@ -37,7 +37,7 @@
   "Name": "Audio Output",
   "PropertyInspectorPath": "propertyinspector/index.html",
   "Icon": "default.png", 
-  "Version": "1.1",
+  "Version": "1.2",
   "OS": [
     {
         "Platform": "windows", 

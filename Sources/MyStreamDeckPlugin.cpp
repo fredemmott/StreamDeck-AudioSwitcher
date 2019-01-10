@@ -94,24 +94,29 @@ void MyStreamDeckPlugin::UpdateTimer()
 	if(mConnectionManager != nullptr)
 	{
 		mVisibleContextsMutex.lock();
-		const auto currentDeviceId = GetDefaultAudioDeviceID();
 		for (const std::string& context : mVisibleContexts)
 		{
-			const auto primary = mPrimaryDevices[context];
-			if (mActions[context] == "com.fredemmott.audiooutputswitch.toggle") {
-				const auto secondary = mSecondaryDevices[context];
-				if (currentDeviceId == primary) {
+			const auto settings = mSettings[context];
+			const auto currentDeviceId = GetDefaultAudioDeviceID(
+				settings.direction,
+				settings.role
+			);
+			if (settings.action == "com.fredemmott.audiooutputswitch.set") {
+				mConnectionManager->SetState(currentDeviceId == settings.primaryDevice ? 0 : 1, context);
+				continue;
+			}
+
+			if (settings.action == "com.fredemmott.audiooutputswitch.toggle") {
+				if (currentDeviceId == settings.primaryDevice) {
 					mConnectionManager->SetState(0, context);
 				}
-				else if (currentDeviceId == secondary) {
+				else if (currentDeviceId == settings.secondaryDevice) {
 					mConnectionManager->SetState(1, context);
 				}
 				else {
 					mConnectionManager->ShowAlertForContext(context);
 				}
-			}
-			else if (mActions[context] == "com.fredemmott.audiooutputswitch.set") {
-				mConnectionManager->SetState(currentDeviceId == primary ? 0 : 1, context);
+				continue;
 			}
 		}
 		mVisibleContextsMutex.unlock();
@@ -123,17 +128,17 @@ void MyStreamDeckPlugin::KeyDownForAction(const std::string& inAction, const std
 	const auto state = EPLJSONUtils::GetIntByName(inPayload, "state");
 	// this looks inverted - but if state is 0, we want to move to state 1, so we want the secondary devices.
 	// if state is 1, we want state 0, so we want the primary device
+	const auto settings = mSettings[inContext];
 	const auto deviceId = (state != 0 || inAction == "com.fredemmott.audiooutputswitch.set")
-		? mPrimaryDevices[inContext]
-		: mSecondaryDevices[inContext];
+		? settings.primaryDevice
+		: settings.secondaryDevice;
 	if (deviceId == "") {
 		return;
 	}
 	// We lock the mutex to stop the display flickering if we come along at the same time as the timer
 	mVisibleContextsMutex.lock();
 
-	const auto currentDeviceId = GetDefaultAudioDeviceID();
-	SetDefaultAudioDeviceID(deviceId);
+	SetDefaultAudioDeviceID(settings.direction, settings.role, deviceId);
 }
 
 void MyStreamDeckPlugin::KeyUpForAction(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID)
@@ -149,9 +154,18 @@ void MyStreamDeckPlugin::WillAppearForAction(const std::string& inAction, const 
 	mVisibleContexts.insert(inContext);
 	json settings;
 	EPLJSONUtils::GetObjectByName(inPayload, "settings", settings);
-	mActions[inContext] = inAction;
-	mPrimaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "primary", GetDefaultAudioDeviceID());
-	mSecondaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "secondary");
+
+	// I want C++20 :'(
+	ButtonSettings bsettings{
+		/* .inAction = */ inAction,
+		/* .direction = */ (EPLJSONUtils::GetStringByName(settings, "direction", "output") == "input")
+			? Direction::INPUT : Direction::OUTPUT,
+		/* .role = */ (EPLJSONUtils::GetStringByName(settings, "role", "default") == "communication")
+			? Role::COMMUNICATION : Role::DEFAULT,
+		/* .primaryDevice = */ EPLJSONUtils::GetStringByName(settings, "primary", GetDefaultAudioDeviceID(Direction::OUTPUT, Role::DEFAULT)),
+		/* .secondaryDevice = */ EPLJSONUtils::GetStringByName(settings, "secondary"),
+	};
+	mSettings[inContext] = bsettings;
 
 	mVisibleContextsMutex.unlock();
 }
@@ -169,14 +183,18 @@ void MyStreamDeckPlugin::SendToPlugin(const std::string& inAction, const std::st
 	json outPayload;
 
 	const auto event = EPLJSONUtils::GetStringByName(inPayload, "event");
+	auto settings = mSettings[inContext];
 
 	if (event == "getData") {
 		json outPayload {
 			{ "event", event },
-			{ "allDevices", GetAudioDeviceList() },
+			{ "outputDevices", GetAudioDeviceList(Direction::OUTPUT) },
+			{ "inputDevices", GetAudioDeviceList(Direction::INPUT) },
 			{ "settings", {
-				{ "primary", mPrimaryDevices[inContext] },
-				{ "secondary", mSecondaryDevices[inContext] }
+				{ "direction", settings.direction == Direction::INPUT ? "input" : "output" },
+				{ "role", settings.role == Role::COMMUNICATION ? "communication" : "default" },
+				{ "primary", settings.primaryDevice },
+				{ "secondary", settings.secondaryDevice }
 			}}
 		};
 		mConnectionManager->SendToPropertyInspector(inAction, inContext, outPayload);
@@ -184,11 +202,18 @@ void MyStreamDeckPlugin::SendToPlugin(const std::string& inAction, const std::st
 	}
 
 	if (event == "saveSettings") {
-		json settings;
-		EPLJSONUtils::GetObjectByName(inPayload, "settings", settings);
-		mPrimaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "primary");
-		mSecondaryDevices[inContext] = EPLJSONUtils::GetStringByName(settings, "secondary");
-		mConnectionManager->SetSettings(settings, inContext);
+		json jsonSettings;
+		EPLJSONUtils::GetObjectByName(inPayload, "settings", jsonSettings);
+		settings.primaryDevice = EPLJSONUtils::GetStringByName(jsonSettings, "primary");
+		settings.secondaryDevice = EPLJSONUtils::GetStringByName(jsonSettings, "secondary");
+		settings.direction = EPLJSONUtils::GetStringByName(jsonSettings, "direction", "output") == "output"
+			? Direction::OUTPUT
+			: Direction::INPUT;
+		settings.role = EPLJSONUtils::GetStringByName(jsonSettings, "role", "default") == "communication"
+			? Role::COMMUNICATION
+			: Role::DEFAULT;
+		mSettings[inContext] = settings;
+		mConnectionManager->SetSettings(jsonSettings, inContext);
 		return;
 	}
 }

@@ -11,6 +11,7 @@
 //==============================================================================
 
 #include "Common/ESDBasePlugin.h"
+#include "AudioFunctions.h"
 #include <mutex>
 
 class CallBackTimer;
@@ -39,9 +40,16 @@ private:
 	
 	std::mutex mVisibleContextsMutex;
 	std::set<std::string> mVisibleContexts;
-	std::map<std::string, std::string> mPrimaryDevices;
-	std::map<std::string, std::string> mSecondaryDevices;
-	std::map<std::string, std::string> mActions;
+
+	struct ButtonSettings {
+		std::string action;
+		Direction direction;
+		Role role;
+		std::string primaryDevice;
+		std::string secondaryDevice;
+	};
+
+	std::map<std::string, ButtonSettings> mSettings;
 	
 	CallBackTimer *mTimer;
 };
