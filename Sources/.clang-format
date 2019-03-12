@@ -1,0 +1,26 @@
+﻿---
+BasedOnStyle: Google
+AlignEscapedNewlinesLeft: DontAlign
+AlignTrailingComments: 'false'
+AlignAfterOpenBracket: AlwaysBreak
+AllowAllParametersOfDeclarationOnNextLine: 'false'
+AllowShortBlocksOnASingleLine: 'false'
+AllowShortIfStatementsOnASingleLine: 'false'
+AllowShortLoopsOnASingleLine: 'false'
+AllowShortFunctionsOnASingleLine: false
+BinPackArguments: 'true'
+BinPackParameters: 'false'
+BreakBeforeBinaryOperators: 'true'
+ColumnLimit: '80'
+ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
+ConstructorInitializerIndentWidth: '2'
+ContinuationIndentWidth: '2'
+IndentWidth: '2'
+MaxEmptyLinesToKeep: '1'
+SpaceBeforeAssignmentOperators: 'true'
+SpacesBeforeTrailingComments: '0'
+TabWidth: '2'
+UseTab: Never
+ReflowComments: true
+
+...
