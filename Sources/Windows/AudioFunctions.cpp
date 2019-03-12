@@ -1,18 +1,21 @@
+// clang-format off
+// windows cares about header order
 #include "windows.h"
 #include "mmdeviceapi.h"
 #include "mmsystem.h"
 #include "endpointvolume.h"
 #include "Functiondiscoverykeys_devpkey.h"
 #include "PolicyConfig.h"
+// clang-format on
 
 #include "../AudioFunctions.h"
 
 #include <cassert>
-#include <locale>
 #include <codecvt>
+#include <locale>
 
 namespace {
-std::string WCharPtrToString(LPWSTR in) {
+std::string WCharPtrToString(LPCWSTR in) {
   return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}
     .to_bytes(in);
 }
@@ -163,10 +166,9 @@ void SetIsAudioDeviceMuted(const std::string& deviceID, MuteAction action) {
 }
 
 namespace {
-class AudioDeviceCallback : public IAudioEndpointVolumeCallback {
+class VolumeCallback : public IAudioEndpointVolumeCallback {
  public:
-  AudioDeviceCallback(std::function<void(bool isMuted)> cb)
-    : mCB(cb), mRefs(1) {
+  VolumeCallback(std::function<void(bool isMuted)> cb) : mCB(cb), mRefs(1) {
   }
 
   virtual HRESULT __stdcall QueryInterface(const IID& iid, void** ret)
@@ -199,9 +201,9 @@ class AudioDeviceCallback : public IAudioEndpointVolumeCallback {
   long mRefs;
 };
 
-struct CallbackHandle {
+struct VolumeCallbackHandle {
   std::string deviceID;
-  AudioDeviceCallback* impl;
+  VolumeCallback* impl;
   IAudioEndpointVolume* dev;
 };
 
@@ -215,21 +217,138 @@ AddAudioDeviceMuteUnmuteCallback(
   if (!dev) {
     return nullptr;
   }
-  auto impl = new AudioDeviceCallback(cb);
+  auto impl = new VolumeCallback(cb);
   auto ret = dev->RegisterControlChangeNotify(impl);
-  if (ret == S_OK) {
-    return new CallbackHandle({deviceID, impl, dev});
+  if (ret != S_OK) {
+    dev->Release();
+    delete impl;
+    return nullptr;
   }
-  return nullptr;
+  return new VolumeCallbackHandle({deviceID, impl, dev});
 }
 
-void RemoveAudioDeviceMuteUnmuteCallback(AUDIO_DEVICE_MUTE_CALLBACK_HANDLE _handle) {
+void RemoveAudioDeviceMuteUnmuteCallback(
+  AUDIO_DEVICE_MUTE_CALLBACK_HANDLE _handle) {
   if (!_handle) {
     return;
   }
-  const auto handle = reinterpret_cast<CallbackHandle*>(_handle);
+  const auto handle = reinterpret_cast<VolumeCallbackHandle*>(_handle);
   handle->dev->UnregisterControlChangeNotify(handle->impl);
   handle->dev->Release();
+  delete handle;
+  return;
+}
+
+namespace {
+typedef std::function<void(Direction, Role, const std::string&)>
+  DefaultChangeCallbackFun;
+class DefaultChangeCallback : public IMMNotificationClient {
+ public:
+  DefaultChangeCallback(DefaultChangeCallbackFun cb) : mCB(cb), mRefs(1) {
+  }
+
+  virtual HRESULT __stdcall QueryInterface(const IID& iid, void** ret)
+    override {
+    if (iid == IID_IUnknown || iid == __uuidof(IMMNotificationClient)) {
+      *ret = static_cast<IUnknown*>(this);
+      AddRef();
+      return S_OK;
+    }
+    *ret = nullptr;
+    return E_NOINTERFACE;
+  }
+
+  virtual ULONG __stdcall AddRef() override {
+    return InterlockedIncrement(&mRefs);
+  }
+  virtual ULONG __stdcall Release() override {
+    if (InterlockedDecrement(&mRefs) == 0) {
+      delete this;
+    }
+    return mRefs;
+  }
+
+  virtual HRESULT OnDefaultDeviceChanged(
+    EDataFlow flow,
+    ERole winRole,
+    LPCWSTR defaultDeviceID) override {
+    Role role;
+    switch (winRole) {
+      case ERole::eMultimedia:
+        return S_OK;
+      case ERole::eCommunications:
+        role = Role::COMMUNICATION;
+        break;
+      case ERole::eConsole:
+        role = Role::DEFAULT;
+        break;
+    }
+    const Direction direction
+      = (flow == EDataFlow::eCapture) ? Direction::INPUT : Direction::OUTPUT;
+    mCB(direction, role, WCharPtrToString(defaultDeviceID));
+
+    return S_OK;
+  };
+
+  virtual HRESULT OnDeviceAdded(LPCWSTR pwstrDeviceId) override {
+    return S_OK;
+  };
+
+  virtual HRESULT OnDeviceRemoved(LPCWSTR pwstrDeviceId) override {
+    return S_OK;
+  };
+
+  virtual HRESULT OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
+    override {
+    return S_OK;
+  };
+
+  virtual HRESULT OnPropertyValueChanged(
+    LPCWSTR pwstrDeviceId,
+    const PROPERTYKEY key) override {
+    return S_OK;
+  };
+
+ private:
+  DefaultChangeCallbackFun mCB;
+  long mRefs;
+};
+
+struct DefaultChangeCallbackHandle {
+  DefaultChangeCallback* impl;
+  IMMDeviceEnumerator* enumerator;
+};
+
+}// namespace
+
+DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE
+AddDefaultAudioDeviceChangeCallback(DefaultChangeCallbackFun cb) {
+  IMMDeviceEnumerator* de = nullptr;
+  CoCreateInstance(
+    __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
+    __uuidof(IMMDeviceEnumerator), (void**)&de);
+  if (!de) {
+    return nullptr;
+  }
+  auto impl = new DefaultChangeCallback(cb);
+  if (de->RegisterEndpointNotificationCallback(impl) != S_OK) {
+    de->Release();
+    delete impl;
+    return nullptr;
+  }
+
+  return new DefaultChangeCallbackHandle({impl, de});
+}
+
+void RemoveDefaultAudioDeviceChangeCallback(
+  DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE _handle) {
+  if (!_handle) {
+    return;
+  }
+  return;
+  const auto handle = reinterpret_cast<DefaultChangeCallbackHandle*>(_handle);
+  handle->enumerator->UnregisterEndpointNotificationCallback(handle->impl);
+  handle->enumerator->Release();
   delete handle;
   return;
 }
