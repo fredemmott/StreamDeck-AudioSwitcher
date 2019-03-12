@@ -35,10 +35,9 @@ public:
 	void DeviceDidDisconnect(const std::string& inDeviceID) override;
 
 private:
+  void UpdateCallback(const std::string& context);	
 	
-	void UpdateTimer();
-	
-	std::mutex mVisibleContextsMutex;
+	std::recursive_mutex mVisibleContextsMutex;
 	std::set<std::string> mVisibleContexts;
 
 	struct ButtonSettings {
@@ -50,6 +49,7 @@ private:
 	};
 
 	std::map<std::string, ButtonSettings> mSettings;
+  std::map<std::string, DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE> mCallbacks;
 	
 	CallBackTimer *mTimer;
 };
