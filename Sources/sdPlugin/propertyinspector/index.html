@@ -70,10 +70,9 @@
 
 		function receivedDataFromPlugin(jsonObj) {
 			const payload = jsonObj['payload'];
-			if (payload['event'] !== "getData") {
+			if (payload['event'] !== "getDeviceList") {
 				return;
 			}
-			settings = payload['settings'];
 			
 			const isInput = settings.direction == "input";
 			document.getElementById('input').checked = isInput;
@@ -133,7 +132,7 @@
 			uuid = jsonObj.uuid;
 			actionInfo = jsonObj.actionInfo.action;
 			ctx = jsonObj.actionInfo.context;
-
+			settings = jsonObj.actionInfo.payload.settings;
 			
 			if (actionInfo == "com.fredemmott.audiooutputswitch.set") {
 				document.querySelector('#primaryDeviceDiv .sdpi-item-label').innerText = 'Device';
@@ -141,7 +140,7 @@
 			}
 
 			// request settings and list of devices
-			$SD.api.sendToPlugin(uuid, actionInfo, {event: "getData"});
+			$SD.api.sendToPlugin(uuid, actionInfo, {event: "getDeviceList"});
 		};
 		
 		function saveSettings() {
@@ -149,7 +148,7 @@
 			settings.secondary = document.getElementById('secondaryDevice').value;
 			settings.direction = document.getElementById('input').checked ? 'input' : 'output';
 			settings.role = document.getElementById('defaultRole').checked ? 'default' : 'communication';
-			$SD.api.sendToPlugin(uuid, actionInfo, { event: "saveSettings", settings });
+			$SD.api.setSettings(uuid, settings);
 		}
 	</script>
 

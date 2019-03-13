@@ -5,51 +5,83 @@
 @brief      CPU plugin
 
 @copyright  (c) 2018, Corsair Memory, Inc.
-			This source code is licensed under the MIT-style license found in the LICENSE file.
+      This source code is licensed under the MIT-style license found in the
+LICENSE file.
 
 **/
 //==============================================================================
 
-#include "Common/ESDBasePlugin.h"
-#include "AudioFunctions.h"
 #include <mutex>
+#include "AudioFunctions.h"
+#include "Common/ESDBasePlugin.h"
 
 class CallBackTimer;
 
-class MyStreamDeckPlugin : public ESDBasePlugin
-{
-public:
-	
-	MyStreamDeckPlugin();
-	virtual ~MyStreamDeckPlugin();
-	
-	void KeyDownForAction(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID) override;
-	void KeyUpForAction(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID) override;
-	
-	void WillAppearForAction(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID) override;
-	void WillDisappearForAction(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID) override;
+class MyStreamDeckPlugin : public ESDBasePlugin {
+ public:
+  MyStreamDeckPlugin();
+  virtual ~MyStreamDeckPlugin();
 
-	void SendToPlugin(const std::string& inAction, const std::string& inContext, const json &inPayload, const std::string& inDeviceID) override;
-	
-	void DeviceDidConnect(const std::string& inDeviceID, const json &inDeviceInfo) override;
-	void DeviceDidDisconnect(const std::string& inDeviceID) override;
+  void KeyDownForAction(
+    const std::string& inAction,
+    const std::string& inContext,
+    const json& inPayload,
+    const std::string& inDeviceID) override;
+  void KeyUpForAction(
+    const std::string& inAction,
+    const std::string& inContext,
+    const json& inPayload,
+    const std::string& inDeviceID) override;
 
-private:
-  void UpdateCallback(const std::string& context);	
-	
-	std::recursive_mutex mVisibleContextsMutex;
-	std::set<std::string> mVisibleContexts;
+  void WillAppearForAction(
+    const std::string& inAction,
+    const std::string& inContext,
+    const json& inPayload,
+    const std::string& inDeviceID) override;
+  void WillDisappearForAction(
+    const std::string& inAction,
+    const std::string& inContext,
+    const json& inPayload,
+    const std::string& inDeviceID) override;
 
-	struct ButtonSettings {
-		std::string action;
-		Direction direction;
-		Role role;
-		std::string primaryDevice;
-		std::string secondaryDevice;
-	};
+  void SendToPlugin(
+    const std::string& inAction,
+    const std::string& inContext,
+    const json& inPayload,
+    const std::string& inDeviceID) override;
 
-	std::map<std::string, ButtonSettings> mSettings;
+  void DeviceDidConnect(const std::string& inDeviceID, const json& inDeviceInfo)
+    override;
+  void DeviceDidDisconnect(const std::string& inDeviceID) override;
+
+  void DidReceiveGlobalSettings(const json& inPayload) override;
+  void DidReceiveSettings(
+    const std::string& inAction,
+    const std::string& inContext,
+    const json& inPayload,
+    const std::string& inDeviceID) override;
+
+ private:
+  std::recursive_mutex mVisibleContextsMutex;
+  std::set<std::string> mVisibleContexts;
+
+  struct ButtonSettings {
+    std::string action;
+    Direction direction;
+    Role role;
+    std::string primaryDevice;
+    std::string secondaryDevice;
+  };
+  static ButtonSettings ButtonSettingsFromJSON(const json& payload);
+  void UpdateCallback(
+    const std::string& context,
+    const ButtonSettings& settings);
+  void UpdateState(
+    const std::string& context,
+    const ButtonSettings& settings,
+    const std::string& activeAudioDeviceID = "");
+
   std::map<std::string, DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE> mCallbacks;
-	
-	CallBackTimer *mTimer;
+
+  CallBackTimer* mTimer;
 };

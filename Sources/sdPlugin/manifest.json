@@ -12,7 +12,7 @@
       "SupportedInMultiActions": false,
 	  "Icon": "headphones",
 	  "Name": "Toggle Audio Device",
-      "Tooltip": "Switch between two audio outputs.",
+      "Tooltip": "Switch between two audio devices.",
       "UUID": "com.fredemmott.audiooutputswitch.toggle"
     },
 	{
@@ -33,15 +33,19 @@
   ], 
   "Author": "Fred Emmott", 
   "CodePathWin": "sdaudioswitch.exe", 
-  "Description": "Switch system audio outputs.",
+  "Description": "Toggle or set the active audio devices.",
   "Name": "Audio Output",
   "PropertyInspectorPath": "propertyinspector/index.html",
   "Icon": "default.png", 
-  "Version": "1.2",
+  "Version": "2.0",
   "OS": [
     {
         "Platform": "windows", 
         "MinimumVersion" : "10"
     }
-  ]
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion" : "4.1"
+  }
 }

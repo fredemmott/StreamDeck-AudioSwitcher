@@ -1,11 +1,16 @@
-/* global $SD, ControlCenterClient, REMOTESETTINGS, initializeControlCenterClient, $localizedStrings */
-/* exported initializeControlCenterClient, $localizedStrings, REMOTESETTINGS */
+/* global $SD, $localizedStrings */
+/* exported, $localizedStrings */
 /* eslint no-undef: "error",
   curly: 0,
-  no-caller: 0
+  no-caller: 0,
+  wrap-iife: 0,
+  one-var: 0,
+  no-var: 0,
+  vars-on-top: 0
 */
 
-// eslint-disable-next-line no-use-before-define
+// don't change this to let or const, because we rely on var's hoisting
+// eslint-disable-next-line no-use-before-define, no-var
 var $localizedStrings = $localizedStrings || {},
     REMOTESETTINGS = REMOTESETTINGS || {},
     DestinationEnum = Object.freeze({
@@ -16,7 +21,8 @@ var $localizedStrings = $localizedStrings || {},
     // eslint-disable-next-line no-unused-vars
     isQT = navigator.appVersion.includes('QtWebEngine'),
     debug = debug || false,
-    debugLog = function () {};
+    debugLog = function () {},
+    MIMAGECACHE = MIMAGECACHE || {};
 
 const setDebugOutput = (debug) => (debug === true) ? console.log.bind(window.console) : function () {};
 debugLog = setDebugOutput(debug);
@@ -56,15 +62,19 @@ const sprintf = (s, ...args) => {
     });
 };
 
-const loadLocalization = (lang, pathPrefix) => {
+const loadLocalization = (lang, pathPrefix, cb) => {
     Utils.readJson(`${pathPrefix}${lang}.json`, function (jsn) {
         const manifest = Utils.parseJson(jsn);
         $localizedStrings = manifest && manifest.hasOwnProperty('Localization') ? manifest['Localization'] : {};
         debugLog($localizedStrings);
+        if (cb && typeof cb === 'function') cb();
     });
 }
 
 var Utils = {
+    sleep: function (milliseconds) {
+        return new Promise(resolve => setTimeout(resolve, milliseconds));
+    },
     isUndefined: function (value) {
         return typeof value === 'undefined';
     },
@@ -109,14 +119,14 @@ var Utils = {
         return value === null;
     },
     toInteger: function (value) {
-        var INFINITY = 1 / 0,
+        const INFINITY = 1 / 0,
             MAX_INTEGER = 1.7976931348623157e308;
         if (!value) {
             return value === 0 ? value : 0;
         }
         value = Number(value);
         if (value === INFINITY || value === -INFINITY) {
-            var sign = value < 0 ? -1 : 1;
+            const sign = value < 0 ? -1 : 1;
             return sign * MAX_INTEGER;
         }
         return value === value ? value : 0;
@@ -124,6 +134,14 @@ var Utils = {
 };
 Utils.minmax = function (v, min = 0, max = 100) {
     return Math.min(max, Math.max(min, v));
+};
+
+Utils.rangeToPercent = function (value, min, max) {
+    return ((value - min) / (max - min));
+};
+
+Utils.percentToRange = function (percent, min, max) {
+    return ((max - min) * percent + min);
 };
 
 Utils.setDebugOutput = (debug) => {
@@ -206,8 +224,8 @@ Utils.prefix = Utils.randomString() + '_';
 
 Utils.getUrlParameter = function (name) {
     const nameA = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-    var regex = new RegExp('[\\?&]' + nameA + '=([^&#]*)');
-    var results = regex.exec(location.search.replace(/\/$/, ''));
+    const regex = new RegExp('[\\?&]' + nameA + '=([^&#]*)');
+    const results = regex.exec(location.search.replace(/\/$/, ''));
     return results === null
         ? null
         : decodeURIComponent(results[1].replace(/\+/g, ' '));
@@ -293,12 +311,16 @@ Utils.nsColorToHex = function (rP, gP, bP) {
 };
 
 Utils.miredToKelvin = function (mired) {
-    return 1e6 / mired;
+    return Math.round(1e6 / mired);
 };
 
-Utils.kelvinToMired = function (kelvin) {
-    return 1e6 / kelvin;
+Utils.kelvinToMired = function (kelvin, roundTo) {
+    return roundTo ? Utils.roundBy(Math.round(1e6 / kelvin), roundTo) : Math.round(1e6 / kelvin);
 };
+
+Utils.roundBy = function(num, x) {
+    return Math.round((num - 10) / x) * x;
+}
 
 Utils.getBrightness = function (hexColor) {
     // http://www.w3.org/TR/AERT#color-contrast
@@ -326,7 +348,7 @@ Utils.readJson = function (file, callback) {
 };
 
 Utils.loadScript = function (url, callback) {
-    var el = document.createElement('script');
+    const el = document.createElement('script');
     el.src = url;
     el.onload = function () {
         callback(url, true);
@@ -341,7 +363,7 @@ Utils.loadScript = function (url, callback) {
 Utils.parseJson = function (jsonString) {
     if (typeof jsonString === 'object') return jsonString;
     try {
-        var o = JSON.parse(jsonString);
+        const o = JSON.parse(jsonString);
 
         // Handle non-exception-throwing cases:
         // Neither JSON.parse(false) or JSON.parse(1234) throw errors, hence the type-checking,
@@ -434,7 +456,7 @@ Utils.getDataUri = function (url, callback, inCanvas, inFillcolor) {
     var image = new Image();
 
     image.onload = function () {
-        var canvas =
+        const canvas =
             inCanvas && Utils.isCanvas(inCanvas)
                 ? inCanvas
                 : document.createElement('canvas');
@@ -442,7 +464,7 @@ Utils.getDataUri = function (url, callback, inCanvas, inFillcolor) {
         canvas.width = this.naturalWidth; // or 'width' if you want a special/scaled size
         canvas.height = this.naturalHeight; // or 'height' if you want a special/scaled size
 
-        var ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d');
         if (inFillcolor) {
             ctx.fillStyle = inFillcolor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -635,8 +657,8 @@ Utils.observeArray = function (object, callback) {
 
 window['_'] = Utils;
 
-/**
- * connectSocket
+/*
+ * connectElgatoStreamDeckSocket
  * This is the first function StreamDeck Software calls, when
  * establishing the connection to the plugin or the Property Inspector
  * @param {string} inPort - The socket's port to communicate with StreamDeck software.
@@ -644,10 +666,11 @@ window['_'] = Utils;
  * @param {string} inMessageType - Identifies, if the event is meant for the property inspector or the plugin.
  * @param {string} inApplicationInfo - Information about the host (StreamDeck) application
  * @param {string} inActionInfo - Context is an internal identifier used to communicate to the host application.
- **/
+ */
+
 
 // eslint-disable-next-line no-unused-vars
-function connectSocket (
+function connectElgatoStreamDeckSocket (
     inPort,
     inUUID,
     inMessageType,
@@ -656,6 +679,24 @@ function connectSocket (
 ) {
     StreamDeck.getInstance().connect(arguments);
     window.$SD.api = Object.assign({ send: SDApi.send }, SDApi.common, SDApi[inMessageType]);
+}
+
+/* legacy support */
+
+function connectSocket (
+    inPort,
+    inUUID,
+    inMessageType,
+    inApplicationInfo,
+    inActionInfo
+) {
+    connectElgatoStreamDeckSocket(
+        inPort,
+        inUUID,
+        inMessageType,
+        inApplicationInfo,
+        inActionInfo
+    );
 }
 
 /**
@@ -698,8 +739,7 @@ const StreamDeck = (function () {
             inUUID = args[1];
             inMessageType = args[2];
             inApplicationInfo = Utils.parseJson(args[3]);
-            inActionInfo =
-                args[4] !== 'undefined' ? Utils.parseJson(args[4]) : args[4];
+            inActionInfo = args[4] !== 'undefined' ? Utils.parseJson(args[4]) : args[4];
 
             /** Debug variables */
             if (debug) {
@@ -707,7 +747,11 @@ const StreamDeck = (function () {
             }
 
             const lang = Utils.getProp(inApplicationInfo,'application.language', false);
-            if (lang) loadLocalization(lang, inMessageType === 'registerPropertyInspector' ? '../' : './');
+            if (lang) {
+                loadLocalization(lang, inMessageType === 'registerPropertyInspector' ? '../' : './', function() {
+                    events.emit('localizationLoaded', {language:lang});
+                });
+            };
 
             /** restrict the API to what's possible
              * within Plugin or Property Inspector
@@ -764,7 +808,7 @@ const StreamDeck = (function () {
                 var jsonObj = Utils.parseJson(evt.data),
                     m;
 
-                // console.log('[STREAMDECK] websocket.onmessage ... ', jsonObj);
+                // console.log('[STREAMDECK] websocket.onmessage ... ', jsonObj.event, jsonObj);
 
                 if (!jsonObj.hasOwnProperty('action')) {
                     m = jsonObj.event;
@@ -896,7 +940,6 @@ const SDApi = {
          * This function is non-mutating and thereby creates a new object containing
          * all keys of the original JSON objects.
          */
-        // console.log("SEND...........", payload)
         const pl = Object.assign({}, { event: fn, context: context }, payload);
 
         /** Check, if we have a connection, and if, send the JSON payload */
@@ -939,11 +982,6 @@ const SDApi = {
             SDApi.send(context, 'showOk', {});
         },
 
-        setSettings: function (context, payload) {
-            SDApi.send(context, 'setSettings', {
-                payload: payload
-            });
-        },
 
         setState: function (context, payload) {
             SDApi.send(context, 'setState', {
@@ -1007,6 +1045,33 @@ const SDApi = {
     /** COMMON */
 
     common: {
+
+        getSettings: function (context, payload) {
+            SDApi.send(context, 'getSettings', {});
+        },
+
+        setSettings: function (context, payload) {
+            SDApi.send(context, 'setSettings', {
+                payload: payload
+            });
+        },
+
+        getGlobalSettings: function (context, payload) {
+            SDApi.send(context, 'getGlobalSettings', {});
+        },
+        
+        setGlobalSettings: function (context, payload) {
+            SDApi.send(context, 'setGlobalSettings', {
+                payload: payload
+            });
+        },
+
+        logMessage: function (context, payload) {
+            SDApi.send(context, 'logMessage', {
+                payload: payload
+            });
+        },
+
         openUrl: function (context, urlToOpen) {
             SDApi.send(context, 'openUrl', {
                 payload: {
