@@ -32,7 +32,7 @@
 	}
   ], 
   "Author": "Fred Emmott", 
-  "CodePathWin": "sdaudioswitch.exe", 
+  "CodePath": "sdaudioswitch.exe", 
   "Description": "Toggle or set the active audio devices.",
   "Name": "Audio Output",
   "PropertyInspectorPath": "propertyinspector/index.html",
