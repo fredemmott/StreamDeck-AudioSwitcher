@@ -37,7 +37,7 @@
   "Name": "Audio Output",
   "PropertyInspectorPath": "propertyinspector/index.html",
   "Icon": "headphones", 
-  "Version": "2.0",
+  "Version": "2.1",
   "OS": [
     {
         "Platform": "windows", 
