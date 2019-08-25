@@ -49,11 +49,11 @@ void MyStreamDeckPlugin::KeyUpForAction(
   const std::string& inContext,
   const json& inPayload,
   const std::string& inDeviceID) {
-  DebugPrint("Key Up: %s", inPayload.dump().c_str());
+  DebugPrint("SDAudioSwitch: Key Up: %s", inPayload.dump().c_str());
   std::scoped_lock lock(mVisibleContextsMutex);
 
   const auto settings = ButtonSettingsFromJSON(inPayload);
-  UpdateCallback(inContext, settings);
+  UpdateCallback(inAction, inContext, settings);
   // this looks inverted - but if state is 0, we want to move to state 1, so we
   // want the secondary devices. if state is 1, we want state 0, so we want the
   // primary device
@@ -78,10 +78,10 @@ void MyStreamDeckPlugin::WillAppearForAction(
   mVisibleContexts.insert(inContext);
   const auto settings = ButtonSettingsFromJSON(inPayload);
   DebugPrint(
-    "Will appear: %s %s", settings.primaryDevice.c_str(),
-    settings.secondaryDevice.c_str());
-  UpdateCallback(inContext, settings);
-  UpdateState(inContext, settings);
+    "SDAudioSwitch: Will appear: %s %s", settings.primaryDevice.c_str(),
+    inAction.c_str());
+  UpdateCallback(inAction, inContext, settings);
+  UpdateState(inAction, inContext, settings);
 }
 
 void MyStreamDeckPlugin::WillDisappearForAction(
@@ -115,6 +115,7 @@ void MyStreamDeckPlugin::SendToPlugin(
 }
 
 void MyStreamDeckPlugin::UpdateCallback(
+  const std::string& action,
   const std::string& context,
   const ButtonSettings& settings) {
   if (mCallbacks.find(context) != mCallbacks.end()) {
@@ -122,7 +123,7 @@ void MyStreamDeckPlugin::UpdateCallback(
   }
 
   mCallbacks[context] = AddDefaultAudioDeviceChangeCallback(
-    [this, context, settings](
+    [this, action, context, settings](
       Direction direction, Role role, const std::string& deviceID) {
       if (direction != settings.direction) {
         return;
@@ -130,7 +131,7 @@ void MyStreamDeckPlugin::UpdateCallback(
       if (role != settings.role) {
         return;
       }
-      UpdateState(context, settings, deviceID);
+      UpdateState(action, context, settings, deviceID);
     });
 }
 
@@ -156,19 +157,19 @@ MyStreamDeckPlugin::ButtonSettings MyStreamDeckPlugin::ButtonSettingsFromJSON(
 }
 
 void MyStreamDeckPlugin::UpdateState(
+  const std::string& action,
   const std::string& context,
   const ButtonSettings& settings,
   const std::string& _active) {
-  const auto active
-    = _active.empty()
-        ? GetDefaultAudioDeviceID(settings.direction, settings.role)
-        : _active;
+  const auto active = _active.empty() ? GetDefaultAudioDeviceID(
+                                          settings.direction, settings.role)
+                                      : _active;
   DebugPrint(
-    "setting active ID %s %s %s", active.c_str(),
+    "SDAudioSwitch: setting active ID %s %s %s", active.c_str(),
     settings.primaryDevice.c_str(), settings.secondaryDevice.c_str());
 
-  std::scoped_lock lock(mVisibleContextsMutex);
-  if (settings.action == SET_ACTION_ID) {
+    std::scoped_lock lock(mVisibleContextsMutex);
+  if (action == SET_ACTION_ID) {
     mConnectionManager->SetState(
       active == settings.primaryDevice ? 0 : 1, context);
     return;

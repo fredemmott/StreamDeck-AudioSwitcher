@@ -66,7 +66,6 @@ class MyStreamDeckPlugin : public ESDBasePlugin {
   std::set<std::string> mVisibleContexts;
 
   struct ButtonSettings {
-    std::string action;
     Direction direction;
     Role role;
     std::string primaryDevice;
@@ -74,9 +73,11 @@ class MyStreamDeckPlugin : public ESDBasePlugin {
   };
   static ButtonSettings ButtonSettingsFromJSON(const json& payload);
   void UpdateCallback(
+    const std::string& action,
     const std::string& context,
     const ButtonSettings& settings);
   void UpdateState(
+    const std::string& actions,
     const std::string& context,
     const ButtonSettings& settings,
     const std::string& activeAudioDeviceID = "");
