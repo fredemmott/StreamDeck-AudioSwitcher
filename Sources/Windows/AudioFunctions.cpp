@@ -88,9 +88,38 @@ class ScopeExit {
 };
 
 #define _SCOPE_EXIT_CAT(a, b) a##b
-#define _SCOPE_EXIT_UNIQUE_ID(counter) _SCOPE_EXIT_CAT(_SCOPE_EXIT_INSTANCE_, counter)
-#define SCOPE_EXIT(x) const ScopeExit _SCOPE_EXIT_UNIQUE_ID(__COUNTER__)([&]() x)
+#define _SCOPE_EXIT_UNIQUE_ID(counter) \
+  _SCOPE_EXIT_CAT(_SCOPE_EXIT_INSTANCE_, counter)
+#define SCOPE_EXIT(x) \
+  const ScopeExit _SCOPE_EXIT_UNIQUE_ID(__COUNTER__)([&]() x)
+
+AudioDeviceState GetAudioDeviceState(IMMDevice* device) {
+  DWORD nativeState;
+  device->GetState(&nativeState);
+
+  switch (nativeState) {
+    case DEVICE_STATE_ACTIVE:
+      return AudioDeviceState::CONNECTED;
+    case DEVICE_STATE_DISABLED:
+      return AudioDeviceState::DEVICE_DISABLED;
+    case DEVICE_STATE_NOTPRESENT:
+      return AudioDeviceState::DEVICE_NOT_PRESENT;
+    case DEVICE_STATE_UNPLUGGED:
+      return AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION;
+  }
+  assert(false);
+}
+
 }// namespace
+
+AudioDeviceState GetAudioDeviceState(const std::string& id) {
+  auto device = DeviceIDToDevice(id);
+  if (device == nullptr) {
+    return AudioDeviceState::DEVICE_NOT_PRESENT;
+  }
+  SCOPE_EXIT({ device->Release(); });
+  return GetAudioDeviceState(device);
+}
 
 std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
   AudioDeviceDirection direction) {
@@ -103,6 +132,7 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
   IMMDeviceCollection* devices;
   de->EnumAudioEndpoints(
     AudioDeviceDirectionToEDataFlow(direction), DEVICE_STATEMASK_ALL, &devices);
+  SCOPE_EXIT({ devices->Release(); });
 
   UINT deviceCount;
   devices->GetCount(&deviceCount);
@@ -115,8 +145,6 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
     LPWSTR nativeID;
     device->GetId(&nativeID);
     const auto id = WCharPtrToString(nativeID);
-    DWORD nativeState;
-    device->GetState(&nativeState);
     IPropertyStore* properties;
     device->OpenPropertyStore(STGM_READ, &properties);
     SCOPE_EXIT({ properties->Release(); });
@@ -132,21 +160,6 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
       continue;
     }
 
-    AudioDeviceState state;
-    switch (nativeState) {
-      case DEVICE_STATE_ACTIVE:
-        state = AudioDeviceState::CONNECTED;
-        break;
-      case DEVICE_STATE_DISABLED:
-        state = AudioDeviceState::DEVICE_DISABLED;
-        break;
-      case DEVICE_STATE_NOTPRESENT:
-        state = AudioDeviceState::DEVICE_NOT_PRESENT;
-        break;
-      case DEVICE_STATE_UNPLUGGED:
-        state = AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION;
-        break;
-    }
     // TODO: use designated initializers once I upgrade to VS2019 (which has
     // C++20)
     out[id] = AudioDeviceInfo{
@@ -155,7 +168,7 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
       WCharPtrToString(nativeEndpointName.pwszVal),
       WCharPtrToString(nativeCombinedName.pwszVal),
       direction,
-      state,
+      GetAudioDeviceState(device),
     };
   }
   return out;

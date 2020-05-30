@@ -71,18 +71,18 @@ class MyStreamDeckPlugin : public ESDBasePlugin {
     std::string primaryDevice;
     std::string secondaryDevice;
   };
+  struct Button {
+    std::string action;
+    std::string context;
+    ButtonSettings settings;
+  };
   static ButtonSettings ButtonSettingsFromJSON(const json& payload);
-  void UpdateCallback(
-    const std::string& action,
-    const std::string& context,
-    const ButtonSettings& settings);
-  void UpdateState(
-    const std::string& actions,
-    const std::string& context,
-    const ButtonSettings& settings,
-    const std::string& activeAudioDeviceID = "");
+  void OnDefaultDeviceChanged(
+    AudioDeviceDirection direction,
+    AudioDeviceRole role,
+    const std::string& activeAudioDeviceID);
+  void UpdateState(const std::string& context, const std::string& device = "");
 
-  std::map<std::string, DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE> mCallbacks;
-
-  CallBackTimer* mTimer;
+  std::map<std::string, Button> mButtons;
+  DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE mCallbackHandle;
 };

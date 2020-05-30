@@ -38,6 +38,7 @@ struct AudioDeviceInfo {
 };
 
 std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(AudioDeviceDirection);
+AudioDeviceState GetAudioDeviceState(const std::string& id);
 
 std::string GetDefaultAudioDeviceID(AudioDeviceDirection, AudioDeviceRole);
 void SetDefaultAudioDeviceID(
