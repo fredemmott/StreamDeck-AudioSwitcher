@@ -52,8 +52,8 @@
 
 		/** Step 1: Subscribe to the 'connected' event
 		 * and call your own initialization method.
-		 * The connected - event is emitted, when StreamDeck 
-		 * has established a connection. 
+		 * The connected - event is emitted, when StreamDeck
+		 * has established a connection.
 		 * The 'connected' event carries a JSON object containing
 		 * necessary information about the connection and the
 		 * inital data.
@@ -73,52 +73,94 @@
 			if (payload['event'] !== "getDeviceList") {
 				return;
 			}
-			
+
 			const isInput = settings.direction == "input";
 			document.getElementById('input').checked = isInput;
 			document.getElementById('output').checked = !isInput;
-			
+
 			const isCommunication = settings.role == "communication";
 			document.getElementById('communicationRole').checked = isCommunication;
 			document.getElementById('defaultRole').checked = !isCommunication;
-			
+
 			inputDevices = payload['inputDevices'];
 			outputDevices = payload['outputDevices'];
-			
+
 			updateDeviceLists(isInput ? inputDevices : outputDevices);
 			document.getElementById('mainWrapper').classList.remove('hidden');
 			saveSettings();
 		}
-		
+
 		function updateDeviceLists(devices) {
 			const primarySelector = document.getElementById('primaryDevice');
 			const secondarySelector = document.getElementById('secondaryDevice');
 			const primaryId = settings['primary'];
 			const secondaryId = settings['secondary'];
-			
+
+			const state_sort = {
+				"connected": 0,
+				"device_present_no_connection": 1,
+				"device_not_present": 2,
+				"device_disabled": 3,
+			};
+
 			while (primarySelector.firstChild) {
 				primarySelector.removeChild(primarySelector.firstChild);
 				secondarySelector.removeChild(secondarySelector.firstChild);
 			}
-			
-			Object.keys(devices).map(deviceId => {
-				const deviceName = devices[deviceId];
+
+			const sortedIds= Object.keys(devices).sort((a_id, b_id) => {
+				const a = devices[a_id];
+				const b = devices[b_id];
+
+				if (state_sort[a.state] < state_sort[b.state]) {
+					return -1;
+				}
+				if (state_sort[a.state] > state_sort[b.state]) {
+					return 1;
+				}
+				if (a.displayName < b.displayName) {
+					return -1;
+				}
+				if (a.displayName > b.displayName) {
+					return 1;
+				}
+				return 0;
+			});
+
+			sortedIds.forEach(deviceId => {
+				const device = devices[deviceId];
+
+				const isPrimary = (deviceId === primaryId);
+				const isSecondary = (deviceId === secondaryId);
+
+				if (device.state !== "connected" && device.state !== "device_present_no_connection" && !(isPrimary || isSecondary)) {
+					return;
+				}
+
+				const displayName = device.displayName + {
+					"connected": "",
+					"device_present_no_connection": " (unplugged)",
+					"device_not_present": " (not present)",
+					"device_disabled": " (disabled)"
+				}[device.state];
+
 				const primaryOption = document.createElement("option");
 				primaryOption.setAttribute("value", deviceId);
-				primaryOption.setAttribute("label", deviceName);
+				primaryOption.setAttribute("label", displayName);
 				const secondaryOption = primaryOption.cloneNode();
-				
-				if (primaryId === deviceId) {
+
+				if (isPrimary) {
 					primaryOption.setAttribute("selected", true);
 				}
-				if (secondaryId === deviceId) {
+				if (isSecondary) {
 					secondaryOption.setAttribute("selected", true);
 				}
+
 				primarySelector.appendChild(primaryOption);
 				secondarySelector.appendChild(secondaryOption);
 			});
 		}
-		
+
 		function updateDirection() {
 			if (document.getElementById('input').checked) {
 				updateDeviceLists(inputDevices);
@@ -133,7 +175,7 @@
 			actionInfo = jsonObj.actionInfo.action;
 			ctx = jsonObj.actionInfo.context;
 			settings = jsonObj.actionInfo.payload.settings;
-			
+
 			if (actionInfo == "com.fredemmott.audiooutputswitch.set") {
 				document.querySelector('#primaryDeviceDiv .sdpi-item-label').innerText = 'Device';
 				document.getElementById('secondaryDeviceDiv').style.display = 'none';
@@ -142,7 +184,7 @@
 			// request settings and list of devices
 			$SD.api.sendToPlugin(uuid, actionInfo, {event: "getDeviceList"});
 		};
-		
+
 		function saveSettings() {
 			settings.primary = document.getElementById('primaryDevice').value;
 			settings.secondary = document.getElementById('secondaryDevice').value;

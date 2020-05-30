@@ -30,7 +30,26 @@ const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
 }// namespace
 
 void to_json(json& j, const AudioDeviceInfo& device) {
-  j = device.displayName;
+  j = json({{"id", device.id},
+            {"displayName", device.displayName},
+            {"state", device.state}});
+}
+
+void to_json(json& j, const AudioDeviceState& state) {
+  switch (state) {
+    case AudioDeviceState::CONNECTED:
+      j = "connected";
+      return;
+    case AudioDeviceState::DEVICE_NOT_PRESENT:
+      j = "device_not_present";
+      return;
+    case AudioDeviceState::DEVICE_DISABLED:
+      j = "device_disabled";
+      return;
+    case AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION:
+      j = "device_present_no_connection";
+      return;
+  }
 }
 
 MyStreamDeckPlugin::MyStreamDeckPlugin() {
@@ -58,9 +77,9 @@ void MyStreamDeckPlugin::KeyUpForAction(
 
   const auto settings = ButtonSettingsFromJSON(inPayload);
   UpdateCallback(inAction, inContext, settings);
-  // this looks inverted - but if state is 0, we want to move to state 1, so we
-  // want the secondary devices. if state is 1, we want state 0, so we want the
-  // primary device
+  // this looks inverted - but if state is 0, we want to move to state 1, so
+  // we want the secondary devices. if state is 1, we want state 0, so we want
+  // the primary device
   const auto state = EPLJSONUtils::GetIntByName(inPayload, "state");
   const auto deviceId = (state != 0 || inAction == SET_ACTION_ID)
                           ? settings.primaryDevice
