@@ -29,6 +29,10 @@ const char* SET_ACTION_ID = "com.fredemmott.audiooutputswitch.set";
 const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
 }// namespace
 
+void to_json(json& j, const AudioDeviceInfo& device) {
+  j = device.displayName;
+}
+
 MyStreamDeckPlugin::MyStreamDeckPlugin() {
   CoInitialize(NULL);// initialize COM for the main thread
 }
@@ -103,13 +107,25 @@ void MyStreamDeckPlugin::SendToPlugin(
   json outPayload;
 
   const auto event = EPLJSONUtils::GetStringByName(inPayload, "event");
+  DebugPrint("SDAudioSwitch: Received event %s", event.c_str());
 
   if (event == "getDeviceList") {
+    const auto outputList = GetAudioDeviceList(AudioDeviceDirection::OUTPUT);
+    DebugPrint("SDAudioSwitch: got output list");
+    const auto inputList = GetAudioDeviceList(AudioDeviceDirection::INPUT);
+    DebugPrint("SDAudioSwitch: got input list");
+    DebugPrint(
+      "SDAudioSwitch: device json: %s",
+      json({{"outputDevices", GetAudioDeviceList(AudioDeviceDirection::OUTPUT)},
+            {"inputDevices", GetAudioDeviceList(AudioDeviceDirection::INPUT)}})
+        .dump()
+        .c_str());
     mConnectionManager->SendToPropertyInspector(
       inAction, inContext,
-      json({{"event", event},
-            {"outputDevices", GetAudioDeviceList(AudioDeviceDirection::OUTPUT)},
-            {"inputDevices", GetAudioDeviceList(AudioDeviceDirection::INPUT)}}));
+      json(
+        {{"event", event},
+         {"outputDevices", GetAudioDeviceList(AudioDeviceDirection::OUTPUT)},
+         {"inputDevices", GetAudioDeviceList(AudioDeviceDirection::INPUT)}}));
     return;
   }
 }
@@ -124,7 +140,8 @@ void MyStreamDeckPlugin::UpdateCallback(
 
   mCallbacks[context] = AddDefaultAudioDeviceChangeCallback(
     [this, action, context, settings](
-      AudioDeviceDirection direction, AudioDeviceRole role, const std::string& deviceID) {
+      AudioDeviceDirection direction, AudioDeviceRole role,
+      const std::string& deviceID) {
       if (direction != settings.direction) {
         return;
       }
@@ -168,7 +185,7 @@ void MyStreamDeckPlugin::UpdateState(
     "SDAudioSwitch: setting active ID %s %s %s", active.c_str(),
     settings.primaryDevice.c_str(), settings.secondaryDevice.c_str());
 
-    std::scoped_lock lock(mVisibleContextsMutex);
+  std::scoped_lock lock(mVisibleContextsMutex);
   if (action == SET_ACTION_ID) {
     mConnectionManager->SetState(
       active == settings.primaryDevice ? 0 : 1, context);

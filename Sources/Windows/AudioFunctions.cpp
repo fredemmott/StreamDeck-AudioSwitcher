@@ -75,36 +75,78 @@ IAudioEndpointVolume* DeviceIDToAudioEndpointVolume(
 }
 }// namespace
 
-std::map<std::string, std::string> GetAudioDeviceList(
+std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
   AudioDeviceDirection direction) {
   IMMDeviceEnumerator* de;
   CoCreateInstance(
     __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
     __uuidof(IMMDeviceEnumerator), (void**)&de);
 
+  OutputDebugStringA("SDAudioSwitch: requesting device list from enumerator");
   IMMDeviceCollection* devices;
   de->EnumAudioEndpoints(
-    AudioDeviceDirectionToEDataFlow(direction), DEVICE_STATE_ACTIVE, &devices);
+    AudioDeviceDirectionToEDataFlow(direction), DEVICE_STATEMASK_ALL, &devices);
+  OutputDebugStringA("SDAudioSwitch: Enumerating and serializing");
 
   UINT deviceCount;
   devices->GetCount(&deviceCount);
-  std::map<std::string, std::string> out;
+  std::map<std::string, AudioDeviceInfo> out;
 
+  char buffer[2048];
   for (UINT i = 0; i < deviceCount; ++i) {
+    sprintf(
+      buffer, "SDAudioSwitch: enumerating device %d of %d", i, deviceCount);
+    OutputDebugStringA(buffer);
     IMMDevice* device;
     devices->Item(i, &device);
     LPWSTR deviceID;
     device->GetId(&deviceID);
+    DWORD nativeState;
+    device->GetState(&nativeState);
+    OutputDebugStringA("SDAudioSwitch: Attempting to get property store");
     IPropertyStore* properties;
     device->OpenPropertyStore(STGM_READ, &properties);
     PROPVARIANT name;
     properties->GetValue(PKEY_Device_FriendlyName, &name);
-    out[WCharPtrToString(deviceID)] = WCharPtrToString(name.pwszVal);
+    const auto id = WCharPtrToString(deviceID);
+    OutputDebugStringA("SDAudioSwitch: native state to state");
+    // TODO: use designated initializers once I upgrade to VS2019 (which has
+    // C++20)
+    AudioDeviceState state;
+    switch (nativeState) {
+      case DEVICE_STATE_ACTIVE:
+        state = AudioDeviceState::CONNECTED;
+        break;
+      case DEVICE_STATE_DISABLED:
+        state = AudioDeviceState::DEVICE_DISABLED;
+        break;
+      case DEVICE_STATE_NOTPRESENT:
+        state = AudioDeviceState::DEVICE_NOT_PRESENT;
+        break;
+      case DEVICE_STATE_UNPLUGGED:
+        state = AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION;
+        break;
+    }
+    if (!name.pwszVal) {
+      OutputDebugStringA("SDAudioSwitch: no name, skipping");
+      continue;
+    }
+    const auto stdName = WCharPtrToString(name.pwszVal);
+    OutputDebugStringA("SDAudioSwitch: creating info object");
+    out[id] = AudioDeviceInfo{
+      id,
+      stdName,
+      direction,
+      state,
+    };
+    OutputDebugStringA("SDAudioSwitch: releasing");
     properties->Release();
     device->Release();
   }
   devices->Release();
   de->Release();
+  sprintf(buffer, "SDAudioSwitch: total of %ld devices", (long)out.size());
+  OutputDebugStringA(buffer);
   return out;
 }
 
@@ -249,7 +291,8 @@ void RemoveAudioDeviceMuteUnmuteCallback(
 }
 
 namespace {
-typedef std::function<void(AudioDeviceDirection, AudioDeviceRole, const std::string&)>
+typedef std::function<
+  void(AudioDeviceDirection, AudioDeviceRole, const std::string&)>
   DefaultChangeCallbackFun;
 class DefaultChangeCallback : public IMMNotificationClient {
  public:
@@ -293,8 +336,8 @@ class DefaultChangeCallback : public IMMNotificationClient {
         break;
     }
     const AudioDeviceDirection direction = (flow == EDataFlow::eCapture)
-                                        ? AudioDeviceDirection::INPUT
-                                        : AudioDeviceDirection::OUTPUT;
+                                             ? AudioDeviceDirection::INPUT
+                                             : AudioDeviceDirection::OUTPUT;
     mCB(direction, role, WCharPtrToString(defaultDeviceID));
 
     return S_OK;

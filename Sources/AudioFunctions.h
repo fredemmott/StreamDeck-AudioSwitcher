@@ -20,7 +20,22 @@ enum class MuteAction {
   TOGGLE,
 };
 
-std::map<std::string, std::string> GetAudioDeviceList(AudioDeviceDirection);
+enum class AudioDeviceState {
+  CONNECTED,
+  DEVICE_NOT_PRESENT,// USB device unplugged
+  DEVICE_DISABLED,
+  DEVICE_PRESENT_NO_CONNECTION,// device present, but nothing's plugged into it,
+                               // e.g. headphone jack with nothing plugged in
+};
+
+struct AudioDeviceInfo {
+  std::string id;
+  std::string displayName;
+  AudioDeviceDirection direction;
+  AudioDeviceState state;
+};
+
+std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(AudioDeviceDirection);
 
 std::string GetDefaultAudioDeviceID(AudioDeviceDirection, AudioDeviceRole);
 void SetDefaultAudioDeviceID(
