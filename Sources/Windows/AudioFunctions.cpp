@@ -82,36 +82,36 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
     __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
     __uuidof(IMMDeviceEnumerator), (void**)&de);
 
-  OutputDebugStringA("SDAudioSwitch: requesting device list from enumerator");
   IMMDeviceCollection* devices;
   de->EnumAudioEndpoints(
     AudioDeviceDirectionToEDataFlow(direction), DEVICE_STATEMASK_ALL, &devices);
-  OutputDebugStringA("SDAudioSwitch: Enumerating and serializing");
 
   UINT deviceCount;
   devices->GetCount(&deviceCount);
   std::map<std::string, AudioDeviceInfo> out;
 
-  char buffer[2048];
   for (UINT i = 0; i < deviceCount; ++i) {
-    sprintf(
-      buffer, "SDAudioSwitch: enumerating device %d of %d", i, deviceCount);
-    OutputDebugStringA(buffer);
     IMMDevice* device;
     devices->Item(i, &device);
-    LPWSTR deviceID;
-    device->GetId(&deviceID);
+    LPWSTR nativeID;
+    device->GetId(&nativeID);
+    const auto id = WCharPtrToString(nativeID);
     DWORD nativeState;
     device->GetState(&nativeState);
-    OutputDebugStringA("SDAudioSwitch: Attempting to get property store");
     IPropertyStore* properties;
     device->OpenPropertyStore(STGM_READ, &properties);
-    PROPVARIANT name;
-    properties->GetValue(PKEY_Device_FriendlyName, &name);
-    const auto id = WCharPtrToString(deviceID);
-    OutputDebugStringA("SDAudioSwitch: native state to state");
-    // TODO: use designated initializers once I upgrade to VS2019 (which has
-    // C++20)
+    PROPVARIANT nativeCombinedName;
+    properties->GetValue(PKEY_Device_FriendlyName, &nativeCombinedName);
+    PROPVARIANT nativeInterfaceName;
+    properties->GetValue(
+      PKEY_DeviceInterface_FriendlyName, &nativeInterfaceName);
+    PROPVARIANT nativeEndpointName;
+    properties->GetValue(PKEY_Device_DeviceDesc, &nativeEndpointName);
+
+    if (!nativeCombinedName.pwszVal) {
+      continue;
+    }
+
     AudioDeviceState state;
     switch (nativeState) {
       case DEVICE_STATE_ACTIVE:
@@ -127,26 +127,21 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
         state = AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION;
         break;
     }
-    if (!name.pwszVal) {
-      OutputDebugStringA("SDAudioSwitch: no name, skipping");
-      continue;
-    }
-    const auto stdName = WCharPtrToString(name.pwszVal);
-    OutputDebugStringA("SDAudioSwitch: creating info object");
+    // TODO: use designated initializers once I upgrade to VS2019 (which has
+    // C++20)
     out[id] = AudioDeviceInfo{
       id,
-      stdName,
+      WCharPtrToString(nativeInterfaceName.pwszVal),
+      WCharPtrToString(nativeEndpointName.pwszVal),
+      WCharPtrToString(nativeCombinedName.pwszVal),
       direction,
       state,
     };
-    OutputDebugStringA("SDAudioSwitch: releasing");
     properties->Release();
     device->Release();
   }
   devices->Release();
   de->Release();
-  sprintf(buffer, "SDAudioSwitch: total of %ld devices", (long)out.size());
-  OutputDebugStringA(buffer);
   return out;
 }
 

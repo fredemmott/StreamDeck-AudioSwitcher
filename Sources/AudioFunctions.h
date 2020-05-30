@@ -30,7 +30,9 @@ enum class AudioDeviceState {
 
 struct AudioDeviceInfo {
   std::string id;
-  std::string displayName;
+  std::string interfaceName; // e.g. "Generic USB Audio Device"
+  std::string endpointName; // e.g. "Speakers"
+  std::string displayName; // e.g. "Generic USB Audio Device (Speakers)"
   AudioDeviceDirection direction;
   AudioDeviceState state;
 };

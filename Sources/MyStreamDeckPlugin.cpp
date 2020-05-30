@@ -31,6 +31,8 @@ const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
 
 void to_json(json& j, const AudioDeviceInfo& device) {
   j = json({{"id", device.id},
+            {"interfaceName", device.interfaceName},
+            {"endpointName", device.endpointName},
             {"displayName", device.displayName},
             {"state", device.state}});
 }
