@@ -30,17 +30,19 @@
 			}
 		]
 	}
-  ], 
-  "Author": "Fred Emmott", 
-  "CodePath": "sdaudioswitch.exe", 
+  ],
+  "Author": "Fred Emmott",
+  "CodePath": "sdaudioswitch.exe",
+    "CodePathWin": "sdaudioswitch.exe",
+
   "Description": "Toggle or set the active audio devices.",
   "Name": "Audio Output",
   "PropertyInspectorPath": "propertyinspector/index.html",
-  "Icon": "headphones", 
-  "Version": "2.1",
+  "Icon": "headphones",
+  "Version": "2.3",
   "OS": [
     {
-        "Platform": "windows", 
+        "Platform": "windows",
         "MinimumVersion" : "10"
     }
   ],
