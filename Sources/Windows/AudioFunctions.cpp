@@ -30,21 +30,21 @@ std::wstring Utf8StrToWString(const std::string& in) {
     .from_bytes(in);
 }
 
-EDataFlow DirectionToEDataFlow(const Direction dir) {
+EDataFlow AudioDeviceDirectionToEDataFlow(const AudioDeviceDirection dir) {
   switch (dir) {
-    case Direction::INPUT:
+    case AudioDeviceDirection::INPUT:
       return eCapture;
-    case Direction::OUTPUT:
+    case AudioDeviceDirection::OUTPUT:
       return eRender;
   }
   __assume(0);
 }
 
-ERole RoleToERole(const Role role) {
+ERole AudioDeviceRoleToERole(const AudioDeviceRole role) {
   switch (role) {
-    case Role::COMMUNICATION:
+    case AudioDeviceRole::COMMUNICATION:
       return eCommunications;
-    case Role::DEFAULT:
+    case AudioDeviceRole::DEFAULT:
       return eConsole;
   }
   __assume(0);
@@ -75,7 +75,8 @@ IAudioEndpointVolume* DeviceIDToAudioEndpointVolume(
 }
 }// namespace
 
-std::map<std::string, std::string> GetAudioDeviceList(Direction direction) {
+std::map<std::string, std::string> GetAudioDeviceList(
+  AudioDeviceDirection direction) {
   IMMDeviceEnumerator* de;
   CoCreateInstance(
     __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
@@ -83,7 +84,7 @@ std::map<std::string, std::string> GetAudioDeviceList(Direction direction) {
 
   IMMDeviceCollection* devices;
   de->EnumAudioEndpoints(
-    DirectionToEDataFlow(direction), DEVICE_STATE_ACTIVE, &devices);
+    AudioDeviceDirectionToEDataFlow(direction), DEVICE_STATE_ACTIVE, &devices);
 
   UINT deviceCount;
   devices->GetCount(&deviceCount);
@@ -107,14 +108,17 @@ std::map<std::string, std::string> GetAudioDeviceList(Direction direction) {
   return out;
 }
 
-std::string GetDefaultAudioDeviceID(Direction direction, Role role) {
+std::string GetDefaultAudioDeviceID(
+  AudioDeviceDirection direction,
+  AudioDeviceRole role) {
   IMMDeviceEnumerator* de;
   CoCreateInstance(
     __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
     __uuidof(IMMDeviceEnumerator), (void**)&de);
   IMMDevice* device;
   de->GetDefaultAudioEndpoint(
-    DirectionToEDataFlow(direction), RoleToERole(role), &device);
+    AudioDeviceDirectionToEDataFlow(direction), AudioDeviceRoleToERole(role),
+    &device);
   LPWSTR deviceID;
   device->GetId(&deviceID);
   const auto ret = WCharPtrToString(deviceID);
@@ -124,8 +128,8 @@ std::string GetDefaultAudioDeviceID(Direction direction, Role role) {
 }
 
 void SetDefaultAudioDeviceID(
-  Direction direction,
-  Role role,
+  AudioDeviceDirection direction,
+  AudioDeviceRole role,
   const std::string& desiredID) {
   if (desiredID == GetDefaultAudioDeviceID(direction, role)) {
     return;
@@ -137,7 +141,7 @@ void SetDefaultAudioDeviceID(
     __uuidof(CPolicyConfigVistaClient), NULL, CLSCTX_ALL,
     __uuidof(IPolicyConfigVista), (LPVOID*)&pPolicyConfig);
   pPolicyConfig->SetDefaultEndpoint(
-    Utf8StrToWString(desiredID).c_str(), RoleToERole(role));
+    Utf8StrToWString(desiredID).c_str(), AudioDeviceRoleToERole(role));
   pPolicyConfig->Release();
 }
 
@@ -245,7 +249,7 @@ void RemoveAudioDeviceMuteUnmuteCallback(
 }
 
 namespace {
-typedef std::function<void(Direction, Role, const std::string&)>
+typedef std::function<void(AudioDeviceDirection, AudioDeviceRole, const std::string&)>
   DefaultChangeCallbackFun;
 class DefaultChangeCallback : public IMMNotificationClient {
  public:
@@ -275,21 +279,22 @@ class DefaultChangeCallback : public IMMNotificationClient {
 
   virtual HRESULT OnDefaultDeviceChanged(
     EDataFlow flow,
-    ERole winRole,
+    ERole winAudioDeviceRole,
     LPCWSTR defaultDeviceID) override {
-    Role role;
-    switch (winRole) {
+    AudioDeviceRole role;
+    switch (winAudioDeviceRole) {
       case ERole::eMultimedia:
         return S_OK;
       case ERole::eCommunications:
-        role = Role::COMMUNICATION;
+        role = AudioDeviceRole::COMMUNICATION;
         break;
       case ERole::eConsole:
-        role = Role::DEFAULT;
+        role = AudioDeviceRole::DEFAULT;
         break;
     }
-    const Direction direction
-      = (flow == EDataFlow::eCapture) ? Direction::INPUT : Direction::OUTPUT;
+    const AudioDeviceDirection direction = (flow == EDataFlow::eCapture)
+                                        ? AudioDeviceDirection::INPUT
+                                        : AudioDeviceDirection::OUTPUT;
     mCB(direction, role, WCharPtrToString(defaultDeviceID));
 
     return S_OK;

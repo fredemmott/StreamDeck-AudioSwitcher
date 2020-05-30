@@ -66,8 +66,8 @@ class MyStreamDeckPlugin : public ESDBasePlugin {
   std::set<std::string> mVisibleContexts;
 
   struct ButtonSettings {
-    Direction direction;
-    Role role;
+    AudioDeviceDirection direction;
+    AudioDeviceRole role;
     std::string primaryDevice;
     std::string secondaryDevice;
   };

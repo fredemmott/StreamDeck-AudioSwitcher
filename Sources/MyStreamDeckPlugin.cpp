@@ -108,8 +108,8 @@ void MyStreamDeckPlugin::SendToPlugin(
     mConnectionManager->SendToPropertyInspector(
       inAction, inContext,
       json({{"event", event},
-            {"outputDevices", GetAudioDeviceList(Direction::OUTPUT)},
-            {"inputDevices", GetAudioDeviceList(Direction::INPUT)}}));
+            {"outputDevices", GetAudioDeviceList(AudioDeviceDirection::OUTPUT)},
+            {"inputDevices", GetAudioDeviceList(AudioDeviceDirection::INPUT)}}));
     return;
   }
 }
@@ -124,7 +124,7 @@ void MyStreamDeckPlugin::UpdateCallback(
 
   mCallbacks[context] = AddDefaultAudioDeviceChangeCallback(
     [this, action, context, settings](
-      Direction direction, Role role, const std::string& deviceID) {
+      AudioDeviceDirection direction, AudioDeviceRole role, const std::string& deviceID) {
       if (direction != settings.direction) {
         return;
       }
@@ -147,12 +147,12 @@ MyStreamDeckPlugin::ButtonSettings MyStreamDeckPlugin::ButtonSettingsFromJSON(
   settings.direction
     = EPLJSONUtils::GetStringByName(jsonSettings, "direction", "output")
           == "output"
-        ? Direction::OUTPUT
-        : Direction::INPUT;
+        ? AudioDeviceDirection::OUTPUT
+        : AudioDeviceDirection::INPUT;
   settings.role = EPLJSONUtils::GetStringByName(jsonSettings, "role", "default")
                       == "communication"
-                    ? Role::COMMUNICATION
-                    : Role::DEFAULT;
+                    ? AudioDeviceRole::COMMUNICATION
+                    : AudioDeviceRole::DEFAULT;
   return settings;
 }
 

@@ -4,12 +4,12 @@
 #include <map>
 #include <string>
 
-enum class Role {
+enum class AudioDeviceRole {
   DEFAULT,
   COMMUNICATION,
 };
 
-enum class Direction {
+enum class AudioDeviceDirection {
   OUTPUT,
   INPUT,
 };
@@ -20,10 +20,13 @@ enum class MuteAction {
   TOGGLE,
 };
 
-std::map<std::string, std::string> GetAudioDeviceList(Direction);
+std::map<std::string, std::string> GetAudioDeviceList(AudioDeviceDirection);
 
-std::string GetDefaultAudioDeviceID(Direction, Role);
-void SetDefaultAudioDeviceID(Direction, Role, const std::string& deviceID);
+std::string GetDefaultAudioDeviceID(AudioDeviceDirection, AudioDeviceRole);
+void SetDefaultAudioDeviceID(
+  AudioDeviceDirection,
+  AudioDeviceRole,
+  const std::string& deviceID);
 
 bool IsAudioDeviceMuted(const std::string& deviceID);
 void SetIsAudioDeviceMuted(const std::string& deviceID, MuteAction);
@@ -37,7 +40,8 @@ void RemoveAudioDeviceMuteUnmuteCallback(AUDIO_DEVICE_MUTE_CALLBACK_HANDLE);
 typedef void* DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE;
 DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE
 AddDefaultAudioDeviceChangeCallback(
-  std::function<void(Direction, Role, const std::string&)>);
+  std::function<
+    void(AudioDeviceDirection, AudioDeviceRole, const std::string&)>);
 void RemoveDefaultAudioDeviceChangeCallback(
   DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE);
 #ifdef HAVE_FEEDBACK_SOUNDS
