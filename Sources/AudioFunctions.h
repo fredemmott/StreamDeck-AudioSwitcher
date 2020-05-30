@@ -40,3 +40,6 @@ AddDefaultAudioDeviceChangeCallback(
   std::function<void(Direction, Role, const std::string&)>);
 void RemoveDefaultAudioDeviceChangeCallback(
   DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE);
+#ifdef HAVE_FEEDBACK_SOUNDS
+void PlayFeedbackSound(MuteAction action);
+#endif

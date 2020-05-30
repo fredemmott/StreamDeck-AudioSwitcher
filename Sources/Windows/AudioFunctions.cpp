@@ -1,12 +1,17 @@
+// Include order matters for these; don't let the autoformatter break things
+
 // clang-format off
-// windows cares about header order
 #include "windows.h"
+#include "endpointvolume.h"
 #include "mmdeviceapi.h"
 #include "mmsystem.h"
-#include "endpointvolume.h"
-#include "Functiondiscoverykeys_devpkey.h"
 #include "PolicyConfig.h"
+#include "Functiondiscoverykeys_devpkey.h"
 // clang-format on
+
+#ifdef HAVE_FEEDBACK_SOUNDS
+#include "resource.h"
+#endif
 
 #include "../AudioFunctions.h"
 
@@ -319,6 +324,10 @@ struct DefaultChangeCallbackHandle {
   IMMDeviceEnumerator* enumerator;
 };
 
+#ifdef HAVE_FEEDBACK_SOUNDS
+const auto muteWav = MAKEINTRESOURCE(IDR_MUTE);
+const auto unmuteWav = MAKEINTRESOURCE(IDR_UNMUTE);
+#endif
 }// namespace
 
 DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE
@@ -339,6 +348,14 @@ AddDefaultAudioDeviceChangeCallback(DefaultChangeCallbackFun cb) {
 
   return new DefaultChangeCallbackHandle({impl, de});
 }
+
+#ifdef HAVE_FEEDBACK_SOUNDS
+void PlayFeedbackSound(MuteAction action) {
+  assert(action != MuteAction::TOGGLE);
+  const auto feedbackWav = (action == MuteAction::MUTE) ? muteWav : unmuteWav;
+  PlaySound(feedbackWav, GetModuleHandle(NULL), SND_ASYNC | SND_RESOURCE);
+}
+#endif
 
 void RemoveDefaultAudioDeviceChangeCallback(
   DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE _handle) {
