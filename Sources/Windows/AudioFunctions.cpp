@@ -73,6 +73,23 @@ IAudioEndpointVolume* DeviceIDToAudioEndpointVolume(
   device->Release();
   return volume;
 }
+
+class ScopeExit {
+ public:
+  ScopeExit(std::function<void()> fun) : fun(fun) {
+  }
+
+  ~ScopeExit() {
+    fun();
+  }
+
+ private:
+  std::function<void()> fun;
+};
+
+#define _SCOPE_EXIT_CAT(a, b) a##b
+#define _SCOPE_EXIT_UNIQUE_ID(counter) _SCOPE_EXIT_CAT(_SCOPE_EXIT_INSTANCE_, counter)
+#define SCOPE_EXIT(x) const ScopeExit _SCOPE_EXIT_UNIQUE_ID(__COUNTER__)([&]() x)
 }// namespace
 
 std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
@@ -81,6 +98,7 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
   CoCreateInstance(
     __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
     __uuidof(IMMDeviceEnumerator), (void**)&de);
+  SCOPE_EXIT({ de->Release(); });
 
   IMMDeviceCollection* devices;
   de->EnumAudioEndpoints(
@@ -93,6 +111,7 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
   for (UINT i = 0; i < deviceCount; ++i) {
     IMMDevice* device;
     devices->Item(i, &device);
+    SCOPE_EXIT({ device->Release(); });
     LPWSTR nativeID;
     device->GetId(&nativeID);
     const auto id = WCharPtrToString(nativeID);
@@ -100,6 +119,7 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
     device->GetState(&nativeState);
     IPropertyStore* properties;
     device->OpenPropertyStore(STGM_READ, &properties);
+    SCOPE_EXIT({ properties->Release(); });
     PROPVARIANT nativeCombinedName;
     properties->GetValue(PKEY_Device_FriendlyName, &nativeCombinedName);
     PROPVARIANT nativeInterfaceName;
@@ -137,11 +157,7 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
       direction,
       state,
     };
-    properties->Release();
-    device->Release();
   }
-  devices->Release();
-  de->Release();
   return out;
 }
 
