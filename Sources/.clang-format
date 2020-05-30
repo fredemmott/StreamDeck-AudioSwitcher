@@ -1,4 +1,3 @@
-﻿---
 BasedOnStyle: Google
 AlignEscapedNewlinesLeft: DontAlign
 AlignTrailingComments: 'false'
@@ -22,5 +21,3 @@ SpacesBeforeTrailingComments: '0'
 TabWidth: '2'
 UseTab: Never
 ReflowComments: true
-
-...
