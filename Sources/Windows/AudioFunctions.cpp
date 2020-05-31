@@ -160,15 +160,13 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
       continue;
     }
 
-    // TODO: use designated initializers once I upgrade to VS2019 (which has
-    // C++20)
     out[id] = AudioDeviceInfo{
-      id,
-      WCharPtrToString(nativeInterfaceName.pwszVal),
-      WCharPtrToString(nativeEndpointName.pwszVal),
-      WCharPtrToString(nativeCombinedName.pwszVal),
-      direction,
-      GetAudioDeviceState(device),
+      .id = id,
+      .interfaceName = WCharPtrToString(nativeInterfaceName.pwszVal),
+      .endpointName = WCharPtrToString(nativeEndpointName.pwszVal),
+      .displayName = WCharPtrToString(nativeCombinedName.pwszVal),
+      .direction = direction,
+      .state = GetAudioDeviceState(device)
     };
   }
   return out;
