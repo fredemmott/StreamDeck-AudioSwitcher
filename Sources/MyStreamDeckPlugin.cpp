@@ -59,9 +59,11 @@ MyStreamDeckPlugin::MyStreamDeckPlugin() {
   mCallbackHandle = AddDefaultAudioDeviceChangeCallback(std::bind(
     &MyStreamDeckPlugin::OnDefaultDeviceChanged, this, std::placeholders::_1,
     std::placeholders::_2, std::placeholders::_3));
+  DebugPrint("SDAudioSwitch: stored handle");
 }
 
 MyStreamDeckPlugin::~MyStreamDeckPlugin() {
+  DebugPrint("SDAudioSwitch: plugin destructor");
   RemoveDefaultAudioDeviceChangeCallback(mCallbackHandle);
 }
 
@@ -70,6 +72,7 @@ void MyStreamDeckPlugin::OnDefaultDeviceChanged(
   AudioDeviceRole role,
   const std::string& device) {
   std::scoped_lock lock(mVisibleContextsMutex);
+  DebugPrint("SDAudioSwitch: default device change");
   for (const auto& [context, button] : mButtons) {
     if (button.settings.direction != direction) {
       continue;

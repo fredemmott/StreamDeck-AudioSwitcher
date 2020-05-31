@@ -4,7 +4,6 @@
 #include "windows.h"
 #include "endpointvolume.h"
 #include "mmdeviceapi.h"
-#include "mmsystem.h"
 #include "PolicyConfig.h"
 #include "Functiondiscoverykeys_devpkey.h"
 // clang-format on
@@ -15,11 +14,18 @@
 
 #include "../AudioFunctions.h"
 
+#include <atlbase.h>
 #include <cassert>
 #include <codecvt>
 #include <locale>
+#include <comip.h>
 
 namespace {
+
+[[noreturn]] void assume_unreachable() {
+  abort();
+}
+
 std::string WCharPtrToString(LPCWSTR in) {
   return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}
     .to_bytes(in);
@@ -50,50 +56,27 @@ ERole AudioDeviceRoleToERole(const AudioDeviceRole role) {
   __assume(0);
 }
 
-IMMDevice* DeviceIDToDevice(const std::string& in) {
-  IMMDeviceEnumerator* de;
-  CoCreateInstance(
-    __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
-    __uuidof(IMMDeviceEnumerator), (void**)&de);
-  IMMDevice* device = nullptr;
+CComPtr<IMMDevice> DeviceIDToDevice(const std::string& in) {
+  CComPtr<IMMDeviceEnumerator> de;
+  de.CoCreateInstance(__uuidof(MMDeviceEnumerator));
+  CComPtr<IMMDevice> device;
   de->GetDevice(Utf8StrToWString(in).data(), &device);
-  de->Release();
   return device;
 }
 
-IAudioEndpointVolume* DeviceIDToAudioEndpointVolume(
+CComPtr<IAudioEndpointVolume> DeviceIDToAudioEndpointVolume(
   const std::string& deviceID) {
   auto device = DeviceIDToDevice(deviceID);
   if (!device) {
     return nullptr;
   }
-  IAudioEndpointVolume* volume = nullptr;
+  CComPtr<IAudioEndpointVolume> volume;
   device->Activate(
     __uuidof(IAudioEndpointVolume), CLSCTX_ALL, nullptr, (void**)&volume);
-  device->Release();
   return volume;
 }
 
-class ScopeExit {
- public:
-  ScopeExit(std::function<void()> fun) : fun(fun) {
-  }
-
-  ~ScopeExit() {
-    fun();
-  }
-
- private:
-  std::function<void()> fun;
-};
-
-#define _SCOPE_EXIT_CAT(a, b) a##b
-#define _SCOPE_EXIT_UNIQUE_ID(counter) \
-  _SCOPE_EXIT_CAT(_SCOPE_EXIT_INSTANCE_, counter)
-#define SCOPE_EXIT(x) \
-  const ScopeExit _SCOPE_EXIT_UNIQUE_ID(__COUNTER__)([&]() x)
-
-AudioDeviceState GetAudioDeviceState(IMMDevice* device) {
+AudioDeviceState GetAudioDeviceState(CComPtr<IMMDevice> device) {
   DWORD nativeState;
   device->GetState(&nativeState);
 
@@ -107,7 +90,7 @@ AudioDeviceState GetAudioDeviceState(IMMDevice* device) {
     case DEVICE_STATE_UNPLUGGED:
       return AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION;
   }
-  assert(false);
+  assume_unreachable();
 }
 
 }// namespace
@@ -117,37 +100,30 @@ AudioDeviceState GetAudioDeviceState(const std::string& id) {
   if (device == nullptr) {
     return AudioDeviceState::DEVICE_NOT_PRESENT;
   }
-  SCOPE_EXIT({ device->Release(); });
   return GetAudioDeviceState(device);
 }
 
 std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
   AudioDeviceDirection direction) {
-  IMMDeviceEnumerator* de;
-  CoCreateInstance(
-    __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
-    __uuidof(IMMDeviceEnumerator), (void**)&de);
-  SCOPE_EXIT({ de->Release(); });
+  CComPtr<IMMDeviceEnumerator> de;
+  de.CoCreateInstance(__uuidof(MMDeviceEnumerator));
 
-  IMMDeviceCollection* devices;
+  CComPtr<IMMDeviceCollection> devices;
   de->EnumAudioEndpoints(
     AudioDeviceDirectionToEDataFlow(direction), DEVICE_STATEMASK_ALL, &devices);
-  SCOPE_EXIT({ devices->Release(); });
 
   UINT deviceCount;
   devices->GetCount(&deviceCount);
   std::map<std::string, AudioDeviceInfo> out;
 
   for (UINT i = 0; i < deviceCount; ++i) {
-    IMMDevice* device;
+    CComPtr<IMMDevice> device;
     devices->Item(i, &device);
-    SCOPE_EXIT({ device->Release(); });
     LPWSTR nativeID;
     device->GetId(&nativeID);
     const auto id = WCharPtrToString(nativeID);
-    IPropertyStore* properties;
+    CComPtr<IPropertyStore> properties;
     device->OpenPropertyStore(STGM_READ, &properties);
-    SCOPE_EXIT({ properties->Release(); });
     PROPVARIANT nativeCombinedName;
     properties->GetValue(PKEY_Device_FriendlyName, &nativeCombinedName);
     PROPVARIANT nativeInterfaceName;
@@ -166,8 +142,7 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
       .endpointName = WCharPtrToString(nativeEndpointName.pwszVal),
       .displayName = WCharPtrToString(nativeCombinedName.pwszVal),
       .direction = direction,
-      .state = GetAudioDeviceState(device)
-    };
+      .state = GetAudioDeviceState(device)};
   }
   return out;
 }
@@ -175,20 +150,15 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
 std::string GetDefaultAudioDeviceID(
   AudioDeviceDirection direction,
   AudioDeviceRole role) {
-  IMMDeviceEnumerator* de;
-  CoCreateInstance(
-    __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
-    __uuidof(IMMDeviceEnumerator), (void**)&de);
-  IMMDevice* device;
+  CComPtr<IMMDeviceEnumerator> de;
+  de.CoCreateInstance(__uuidof(MMDeviceEnumerator));
+  CComPtr<IMMDevice> device;
   de->GetDefaultAudioEndpoint(
     AudioDeviceDirectionToEDataFlow(direction), AudioDeviceRoleToERole(role),
     &device);
   LPWSTR deviceID;
   device->GetId(&deviceID);
-  const auto ret = WCharPtrToString(deviceID);
-  device->Release();
-  de->Release();
-  return ret;
+  return WCharPtrToString(deviceID);
 }
 
 void SetDefaultAudioDeviceID(
@@ -199,14 +169,10 @@ void SetDefaultAudioDeviceID(
     return;
   }
 
-  IPolicyConfigVista* pPolicyConfig;
-
-  CoCreateInstance(
-    __uuidof(CPolicyConfigVistaClient), NULL, CLSCTX_ALL,
-    __uuidof(IPolicyConfigVista), (LPVOID*)&pPolicyConfig);
+  CComPtr<IPolicyConfigVista> pPolicyConfig;
+  pPolicyConfig.CoCreateInstance(__uuidof(CPolicyConfigVistaClient));
   pPolicyConfig->SetDefaultEndpoint(
     Utf8StrToWString(desiredID).c_str(), AudioDeviceRoleToERole(role));
-  pPolicyConfig->Release();
 }
 
 bool IsAudioDeviceMuted(const std::string& deviceID) {
@@ -216,7 +182,6 @@ bool IsAudioDeviceMuted(const std::string& deviceID) {
   }
   BOOL ret;
   volume->GetMute(&ret);
-  volume->Release();
   return ret;
 }
 
@@ -235,7 +200,6 @@ void SetIsAudioDeviceMuted(const std::string& deviceID, MuteAction action) {
     volume->GetMute(&muted);
     volume->SetMute(!muted, nullptr);
   }
-  volume->Release();
 }
 
 namespace {
@@ -276,8 +240,23 @@ class VolumeCallback : public IAudioEndpointVolumeCallback {
 
 struct VolumeCallbackHandle {
   std::string deviceID;
-  VolumeCallback* impl;
-  IAudioEndpointVolume* dev;
+  CComPtr<VolumeCallback> impl;
+  CComPtr<IAudioEndpointVolume> dev;
+
+  VolumeCallbackHandle(
+    const std::string& deviceID,
+    CComPtr<VolumeCallback> impl,
+    CComPtr<IAudioEndpointVolume> dev) {
+    this->deviceID = deviceID;
+    this->impl = impl;
+    this->dev = dev;
+  }
+
+  VolumeCallbackHandle(const VolumeCallback& copied) = delete;
+
+  ~VolumeCallbackHandle() {
+    dev->UnregisterControlChangeNotify(impl);
+  }
 };
 
 }// namespace
@@ -293,11 +272,10 @@ AddAudioDeviceMuteUnmuteCallback(
   auto impl = new VolumeCallback(cb);
   auto ret = dev->RegisterControlChangeNotify(impl);
   if (ret != S_OK) {
-    dev->Release();
     delete impl;
     return nullptr;
   }
-  return new VolumeCallbackHandle({deviceID, impl, dev});
+  return new VolumeCallbackHandle(deviceID, impl, dev);
 }
 
 void RemoveAudioDeviceMuteUnmuteCallback(
@@ -306,8 +284,6 @@ void RemoveAudioDeviceMuteUnmuteCallback(
     return;
   }
   const auto handle = reinterpret_cast<VolumeCallbackHandle*>(_handle);
-  handle->dev->UnregisterControlChangeNotify(handle->impl);
-  handle->dev->Release();
   delete handle;
   return;
 }
@@ -346,6 +322,7 @@ class DefaultChangeCallback : public IMMNotificationClient {
     EDataFlow flow,
     ERole winAudioDeviceRole,
     LPCWSTR defaultDeviceID) override {
+    OutputDebugStringA("SDAudioSwitch: in native default device callback");
     AudioDeviceRole role;
     switch (winAudioDeviceRole) {
       case ERole::eMultimedia:
@@ -390,8 +367,23 @@ class DefaultChangeCallback : public IMMNotificationClient {
 };
 
 struct DefaultChangeCallbackHandle {
-  DefaultChangeCallback* impl;
-  IMMDeviceEnumerator* enumerator;
+  CComPtr<DefaultChangeCallback> impl;
+  CComPtr<IMMDeviceEnumerator> enumerator;
+
+  DefaultChangeCallbackHandle(
+    CComPtr<DefaultChangeCallback> impl,
+    CComPtr<IMMDeviceEnumerator> enumerator) {
+    this->impl = impl;
+    this->enumerator = enumerator;
+  }
+
+  DefaultChangeCallbackHandle(const DefaultChangeCallbackHandle& copied)
+    = delete;
+
+  ~DefaultChangeCallbackHandle() {
+    OutputDebugStringA("SDAudioSwitch: unregistering native callback");
+    enumerator->UnregisterEndpointNotificationCallback(this->impl);
+  }
 };
 
 #ifdef HAVE_FEEDBACK_SOUNDS
@@ -402,21 +394,20 @@ const auto unmuteWav = MAKEINTRESOURCE(IDR_UNMUTE);
 
 DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE
 AddDefaultAudioDeviceChangeCallback(DefaultChangeCallbackFun cb) {
-  IMMDeviceEnumerator* de = nullptr;
-  CoCreateInstance(
-    __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
-    __uuidof(IMMDeviceEnumerator), (void**)&de);
+  CComPtr<IMMDeviceEnumerator> de;
+  de.CoCreateInstance(__uuidof(MMDeviceEnumerator));
   if (!de) {
+    OutputDebugStringA("SDAudioSwitch: failed to get enumerator");
     return nullptr;
   }
-  auto impl = new DefaultChangeCallback(cb);
+  CComPtr<DefaultChangeCallback> impl(new DefaultChangeCallback(cb));
   if (de->RegisterEndpointNotificationCallback(impl) != S_OK) {
-    de->Release();
-    delete impl;
+    OutputDebugStringA("SDAudioSwitch: failed to register callback");
     return nullptr;
   }
 
-  return new DefaultChangeCallbackHandle({impl, de});
+  OutputDebugStringA("SDAudioSwitch: returning new callback handle");
+  return new DefaultChangeCallbackHandle(impl, de);
 }
 
 #ifdef HAVE_FEEDBACK_SOUNDS
@@ -432,10 +423,9 @@ void RemoveDefaultAudioDeviceChangeCallback(
   if (!_handle) {
     return;
   }
-  return;
+  OutputDebugStringA(
+    "SDAudioSwitch: RemoveDefaultAudioDeviceChangeCallback called");
   const auto handle = reinterpret_cast<DefaultChangeCallbackHandle*>(_handle);
-  handle->enumerator->UnregisterEndpointNotificationCallback(handle->impl);
-  handle->enumerator->Release();
   delete handle;
   return;
 }
