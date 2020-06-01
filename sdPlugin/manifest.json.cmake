@@ -39,7 +39,7 @@
   "Name": "Audio Output",
   "PropertyInspectorPath": "propertyinspector/index.html",
   "Icon": "headphones",
-  "Version": "2.3",
+  "Version": "${CMAKE_PROJECT_VERSION}",
   "OS": [
     {
         "Platform": "windows",
