@@ -30,6 +30,13 @@ class ESDBasePlugin {
 
   virtual void DidReceiveGlobalSettings(const json& inPayload) = 0;
 
+  virtual void DidReceiveSettings(
+    const std::string& inAction,
+    const std::string& inContext,
+    const json& inPayload,
+    const std::string& inDeviceID)
+    = 0;
+
   virtual void KeyDownForAction(
     const std::string& inAction,
     const std::string& inContext,

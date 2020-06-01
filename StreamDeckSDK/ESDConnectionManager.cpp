@@ -90,6 +90,8 @@ void ESDConnectionManager::OnMessage(
         mPlugin->WillAppearForAction(action, context, payload, deviceID);
       } else if (event == kESDSDKEventWillDisappear) {
         mPlugin->WillDisappearForAction(action, context, payload, deviceID);
+      } else if (event == kESDSDKEventDidReceiveSettings) {
+        mPlugin->DidReceiveSettings(action, context, payload, deviceID);
       } else if (event == kESDSDKEventDeviceDidConnect) {
         json deviceInfo;
         EPLJSONUtils::GetObjectByName(
