@@ -7,6 +7,14 @@ if (APPLE)
     STREAMDECK_PLUGIN_DIR
     "$ENV{HOME}/Library/ApplicationSupport/com.elgato.StreamDeck/Plugins"
   )
+elseif (WIN32)
+  STRING(
+    REPLACE
+    "\\"
+    "/"
+    STREAMDECK_PLUGIN_DIR
+    "$ENV{appdata}/Elgato/StreamDeck/Plugins"
+  )
 endif()
 set(
   CMAKE_INSTALL_PREFIX
