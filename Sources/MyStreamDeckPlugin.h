@@ -13,7 +13,7 @@ LICENSE file.
 
 #include <mutex>
 #include "AudioFunctions.h"
-#include "Common/ESDBasePlugin.h"
+#include <StreamDeckSDK/ESDBasePlugin.h>
 
 class CallBackTimer;
 

@@ -16,8 +16,8 @@ LICENSE file.
 #include <mutex>
 
 #include "AudioFunctions.h"
-#include "Common/EPLJSONUtils.h"
-#include "Common/ESDConnectionManager.h"
+#include <StreamDeckSDK/EPLJSONUtils.h>
+#include <StreamDeckSDK/ESDConnectionManager.h>
 
 #ifdef _MSVC_LANG
 static_assert(_MSVC_LANG > 201402L, "C++17 not enabled in _MSVC_LANG");
