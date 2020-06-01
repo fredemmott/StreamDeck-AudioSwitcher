@@ -27,13 +27,18 @@ namespace {
 }
 
 std::string WCharPtrToString(LPCWSTR in) {
-  return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}
-    .to_bytes(in);
+  size_t utf8_len = WideCharToMultiByte(CP_UTF8, 0, in, -1, 0, 0, 0, 0);
+  std::string buf(utf8_len, 0);
+  WideCharToMultiByte(CP_UTF8, 0, in, -1, buf.data(), utf8_len, 0, 0);
+  buf.resize(utf8_len - 1);
+  return buf;
 }
 
 std::wstring Utf8StrToWString(const std::string& in) {
-  return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}
-    .from_bytes(in);
+  size_t wchar_len = MultiByteToWideChar(CP_UTF8, 0, in.c_str(), in.size(), 0, 0);
+  std::wstring buf(wchar_len, 0);
+  MultiByteToWideChar(CP_UTF8, 0, in.c_str(), in.size(), buf.data(), wchar_len);
+  return buf;
 }
 
 EDataFlow AudioDeviceDirectionToEDataFlow(const AudioDeviceDirection dir) {
