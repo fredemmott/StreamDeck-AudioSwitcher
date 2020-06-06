@@ -13,7 +13,7 @@ LICENSE file.
 
 #pragma once
 
-#include "ESDCommon.h"
+#include <string>
 
 class ESDUtilities {
  public:

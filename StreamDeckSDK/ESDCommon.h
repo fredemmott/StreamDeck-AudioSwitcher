@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef __APPLE__
 #include "ESDCommonMac.h"
 #else

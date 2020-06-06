@@ -11,7 +11,10 @@ LICENSE file.
 **/
 //==============================================================================
 
+#include "ESDCommon.h"
 #include "ESDUtilities.h"
+
+#include "windows.h"
 
 void ESDUtilities::DoSleep(int inMilliseconds) {
   Sleep(inMilliseconds);
