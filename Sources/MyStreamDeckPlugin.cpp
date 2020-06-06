@@ -12,12 +12,14 @@ LICENSE file.
 //==============================================================================
 
 #include "MyStreamDeckPlugin.h"
+
+#include <StreamDeckSDK/EPLJSONUtils.h>
+#include <StreamDeckSDK/ESDConnectionManager.h>
+
 #include <atomic>
 #include <mutex>
 
 #include "AudioFunctions.h"
-#include <StreamDeckSDK/EPLJSONUtils.h>
-#include <StreamDeckSDK/ESDConnectionManager.h>
 
 #ifdef _MSVC_LANG
 static_assert(_MSVC_LANG > 201402L, "C++17 not enabled in _MSVC_LANG");
@@ -122,7 +124,9 @@ void MyStreamDeckPlugin::KeyUpForAction(
     return;
   }
 
-  if (inAction == SET_ACTION_ID && deviceId == GetDefaultAudioDeviceID(settings.direction, settings.role)) {
+  if (
+    inAction == SET_ACTION_ID
+    && deviceId == GetDefaultAudioDeviceID(settings.direction, settings.role)) {
     // We already have the correct device, undo the state change
     mConnectionManager->SetState(state, inContext);
     return;
@@ -170,21 +174,12 @@ void MyStreamDeckPlugin::SendToPlugin(
 
   if (event == "getDeviceList") {
     const auto outputList = GetAudioDeviceList(AudioDeviceDirection::OUTPUT);
-    DebugPrint("SDAudioSwitch: got output list");
     const auto inputList = GetAudioDeviceList(AudioDeviceDirection::INPUT);
-    DebugPrint("SDAudioSwitch: got input list");
-    DebugPrint(
-      "SDAudioSwitch: device json: %s",
-      json({{"outputDevices", GetAudioDeviceList(AudioDeviceDirection::OUTPUT)},
-            {"inputDevices", GetAudioDeviceList(AudioDeviceDirection::INPUT)}})
-        .dump()
-        .c_str());
     mConnectionManager->SendToPropertyInspector(
       inAction, inContext,
-      json(
-        {{"event", event},
-         {"outputDevices", GetAudioDeviceList(AudioDeviceDirection::OUTPUT)},
-         {"inputDevices", GetAudioDeviceList(AudioDeviceDirection::INPUT)}}));
+      json({{"event", event},
+            {"outputDevices", outputList},
+            {"inputDevices", inputList}}));
     return;
   }
 }
@@ -210,12 +205,16 @@ MyStreamDeckPlugin::ButtonSettings MyStreamDeckPlugin::ButtonSettingsFromJSON(
   return settings;
 }
 
-void MyStreamDeckPlugin::UpdateState(const std::string& context, const std::string& optionalDefaultDevice) {
+void MyStreamDeckPlugin::UpdateState(
+  const std::string& context,
+  const std::string& optionalDefaultDevice) {
   const auto button = mButtons[context];
   const auto action = button.action;
   const auto settings = button.settings;
   const auto activeDevice
-    = optionalDefaultDevice.empty() ? GetDefaultAudioDeviceID(settings.direction, settings.role) : optionalDefaultDevice;
+    = optionalDefaultDevice.empty()
+        ? GetDefaultAudioDeviceID(settings.direction, settings.role)
+        : optionalDefaultDevice;
   DebugPrint(
     "SDAudioSwitch: setting active ID %s %s %s", activeDevice.c_str(),
     settings.primaryDevice.c_str(), settings.secondaryDevice.c_str());
