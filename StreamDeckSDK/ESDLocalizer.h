@@ -12,12 +12,14 @@
 
 #pragma once
 
+#include "ESDCommon.h"
+
 class ESDLocalizer
 {
 public:
-	
+
 	static void Initialize(const std::string &inLanguageCode);
-	
+
 	static std::string GetLocalizedString(const std::string &inDefaultString);
 
 private:
@@ -26,4 +28,3 @@ private:
 
 	json mLocalizationData;
 };
-
