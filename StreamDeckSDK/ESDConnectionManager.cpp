@@ -14,12 +14,13 @@ LICENSE file.
 
 #include "ESDConnectionManager.h"
 
+#include "ESDLogger.h"
 #include "EPLJSONUtils.h"
 
 void ESDConnectionManager::OnOpen(
   WebsocketClient* inClient,
   websocketpp::connection_hdl inConnectionHandler) {
-  DebugPrint("OnOpen");
+  ESDDebug("OnOpen");
 
   // Register plugin with StreamDeck
   json jsonObject;
@@ -44,7 +45,7 @@ void ESDConnectionManager::OnFail(
     }
   }
 
-  DebugPrint("Failed with reason: %s\n", reason.c_str());
+  ESDDebug("Failed with reason: %s\n", reason.c_str());
 }
 
 void ESDConnectionManager::OnClose(
@@ -60,7 +61,7 @@ void ESDConnectionManager::OnClose(
     }
   }
 
-  DebugPrint("Close with reason: %s\n", reason.c_str());
+  ESDDebug("Close with reason: %s\n", reason.c_str());
 }
 
 void ESDConnectionManager::OnMessage(
@@ -69,7 +70,7 @@ void ESDConnectionManager::OnMessage(
   if (
     inMsg != NULL && inMsg->get_opcode() == websocketpp::frame::opcode::text) {
     std::string message = inMsg->get_payload();
-    DebugPrint("OnMessage: %s\n", message.c_str());
+    ESDDebug("OnMessage: %s\n", message.c_str());
 
     try {
       json receivedJson = json::parse(message);
@@ -157,7 +158,7 @@ void ESDConnectionManager::Run() {
     WebsocketClient::connection_ptr connection
       = mWebsocket.get_connection(uri, ec);
     if (ec) {
-      DebugPrint("Connect initialization error: %s\n", ec.message().c_str());
+      ESDDebug("Connect initialization error: %s\n", ec.message().c_str());
       return;
     }
 
@@ -174,7 +175,7 @@ void ESDConnectionManager::Run() {
   } catch (websocketpp::exception const& e) {
     // Prevent an unused variable warning in release builds
     (void)e;
-    DebugPrint("Websocket threw an exception: %s\n", e.what());
+    ESDDebug("Websocket threw an exception: %s\n", e.what());
   }
 }
 

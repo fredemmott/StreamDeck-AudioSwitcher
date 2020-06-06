@@ -15,6 +15,7 @@ LICENSE file.
 
 #include <StreamDeckSDK/EPLJSONUtils.h>
 #include <StreamDeckSDK/ESDConnectionManager.h>
+#include <StreamDeckSDK/ESDLogger.h>
 
 #include <atomic>
 #include <mutex>
@@ -56,11 +57,11 @@ MyStreamDeckPlugin::MyStreamDeckPlugin() {
   mCallbackHandle = AddDefaultAudioDeviceChangeCallback(std::bind(
     &MyStreamDeckPlugin::OnDefaultDeviceChanged, this, std::placeholders::_1,
     std::placeholders::_2, std::placeholders::_3));
-  DebugPrint("SDAudioSwitch: stored handle");
+  ESDDebug("stored handle");
 }
 
 MyStreamDeckPlugin::~MyStreamDeckPlugin() {
-  DebugPrint("SDAudioSwitch: plugin destructor");
+  ESDDebug("plugin destructor");
   RemoveDefaultAudioDeviceChangeCallback(mCallbackHandle);
 }
 
@@ -69,7 +70,7 @@ void MyStreamDeckPlugin::OnDefaultDeviceChanged(
   AudioDeviceRole role,
   const std::string& device) {
   std::scoped_lock lock(mVisibleContextsMutex);
-  DebugPrint("SDAudioSwitch: default device change");
+  ESDDebug("default device change");
   for (const auto& [context, button] : mButtons) {
     if (button.settings.direction != direction) {
       continue;
@@ -94,7 +95,7 @@ void MyStreamDeckPlugin::KeyUpForAction(
   const std::string& inContext,
   const json& inPayload,
   const std::string& inDeviceID) {
-  DebugPrint("SDAudioSwitch: Key Up: %s", inPayload.dump().c_str());
+  ESDDebug("Key Up: %s", inPayload.dump().c_str());
   std::scoped_lock lock(mVisibleContextsMutex);
 
   const auto settings = ButtonSettingsFromJSON(inPayload);
@@ -139,9 +140,8 @@ void MyStreamDeckPlugin::WillAppearForAction(
   // Remember the context
   mVisibleContexts.insert(inContext);
   const auto settings = ButtonSettingsFromJSON(inPayload);
-  DebugPrint(
-    "SDAudioSwitch: Will appear: %s %s", settings.primaryDevice.c_str(),
-    inAction.c_str());
+  ESDDebug(
+    "Will appear: %s %s", settings.primaryDevice.c_str(), inAction.c_str());
   mButtons[inContext] = {inAction, inContext, settings};
   UpdateState(inContext);
 }
@@ -165,7 +165,7 @@ void MyStreamDeckPlugin::SendToPlugin(
   json outPayload;
 
   const auto event = EPLJSONUtils::GetStringByName(inPayload, "event");
-  DebugPrint("SDAudioSwitch: Received event %s", event.c_str());
+  ESDDebug("Received event %s", event.c_str());
 
   if (event == "getDeviceList") {
     const auto outputList = GetAudioDeviceList(AudioDeviceDirection::OUTPUT);
@@ -210,8 +210,8 @@ void MyStreamDeckPlugin::UpdateState(
     = optionalDefaultDevice.empty()
         ? GetDefaultAudioDeviceID(settings.direction, settings.role)
         : optionalDefaultDevice;
-  DebugPrint(
-    "SDAudioSwitch: setting active ID %s %s %s", activeDevice.c_str(),
+  ESDDebug(
+    "setting active ID %s %s %s", activeDevice.c_str(),
     settings.primaryDevice.c_str(), settings.secondaryDevice.c_str());
 
   std::scoped_lock lock(mVisibleContextsMutex);

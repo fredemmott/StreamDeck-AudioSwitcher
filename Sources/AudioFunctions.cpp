@@ -14,6 +14,8 @@
 
 #include "AudioFunctions.h"
 
+#include <StreamDeckSDK/ESDLogger.h>
+
 #include <atlbase.h>
 #include <cassert>
 #include <codecvt>
@@ -337,7 +339,7 @@ class DefaultChangeCallback : public IMMNotificationClient {
     EDataFlow flow,
     ERole winAudioDeviceRole,
     LPCWSTR defaultDeviceID) override {
-    OutputDebugStringA("SDAudioSwitch: in native default device callback");
+    ESDDebug("in native default device callback");
     AudioDeviceRole role;
     switch (winAudioDeviceRole) {
       case ERole::eMultimedia:
@@ -396,7 +398,7 @@ struct DefaultChangeCallbackHandle {
     = delete;
 
   ~DefaultChangeCallbackHandle() {
-    OutputDebugStringA("SDAudioSwitch: unregistering native callback");
+    ESDDebug("unregistering native callback");
     enumerator->UnregisterEndpointNotificationCallback(this->impl);
   }
 };
@@ -412,16 +414,16 @@ AddDefaultAudioDeviceChangeCallback(DefaultChangeCallbackFun cb) {
   CComPtr<IMMDeviceEnumerator> de;
   de.CoCreateInstance(__uuidof(MMDeviceEnumerator));
   if (!de) {
-    OutputDebugStringA("SDAudioSwitch: failed to get enumerator");
+    ESDDebug("failed to get enumerator");
     return nullptr;
   }
   CComPtr<DefaultChangeCallback> impl(new DefaultChangeCallback(cb));
   if (de->RegisterEndpointNotificationCallback(impl) != S_OK) {
-    OutputDebugStringA("SDAudioSwitch: failed to register callback");
+    ESDDebug("failed to register callback");
     return nullptr;
   }
 
-  OutputDebugStringA("SDAudioSwitch: returning new callback handle");
+  ESDDebug("returning new callback handle");
   return new DefaultChangeCallbackHandle(impl, de);
 }
 
@@ -438,8 +440,8 @@ void RemoveDefaultAudioDeviceChangeCallback(
   if (!_handle) {
     return;
   }
-  OutputDebugStringA(
-    "SDAudioSwitch: RemoveDefaultAudioDeviceChangeCallback called");
+  ESDDebug(
+    "RemoveDefaultAudioDeviceChangeCallback called");
   const auto handle = reinterpret_cast<DefaultChangeCallbackHandle*>(_handle);
   delete handle;
   return;

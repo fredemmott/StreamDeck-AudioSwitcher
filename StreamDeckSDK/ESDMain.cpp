@@ -14,10 +14,11 @@ LICENSE file.
 #include "EPLJSONUtils.h"
 #include "ESDConnectionManager.h"
 #include "ESDLocalizer.h"
+#include "ESDLogger.h"
 
 int esd_main(int argc, const char** argv, ESDBasePlugin* plugin) {
   if (argc != 9) {
-    DebugPrint("Invalid number of parameters %d instead of 9\n", argc);
+    ESDDebug("Invalid number of parameters %d instead of 9\n", argc);
     return 1;
   }
 
@@ -42,25 +43,23 @@ int esd_main(int argc, const char** argv, ESDBasePlugin* plugin) {
   }
 
   if (port == 0) {
-    DebugPrint("Invalid port number\n");
+    ESDDebug("Invalid port number\n");
     return 1;
   }
-
   if (pluginUUID.empty()) {
-    DebugPrint("Invalid plugin UUID\n");
+    ESDDebug("Invalid plugin UUID\n");
     return 1;
   }
 
   if (registerEvent.empty()) {
-    DebugPrint("Invalid registerEvent\n");
+    ESDDebug("Invalid registerEvent\n");
     return 1;
   }
 
   if (info.empty()) {
-    DebugPrint("Invalid info\n");
+    ESDDebug("Invalid info\n");
     return 1;
   }
-
   // Initialize localization helper
   std::string language = "en";
 
@@ -80,6 +79,7 @@ int esd_main(int argc, const char** argv, ESDBasePlugin* plugin) {
   // Create the connection manager
   ESDConnectionManager* connectionManager
     = new ESDConnectionManager(port, pluginUUID, registerEvent, info, plugin);
+  ESDLogger::Get()->SetConnectionManager(connectionManager);
 
   // Connect and start the event loop
   connectionManager->Run();

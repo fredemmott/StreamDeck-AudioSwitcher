@@ -13,8 +13,6 @@ LICENSE file.
 
 #pragma once
 
-#include "ESDCommon.h"
-
 #include <string>
 #include <nlohmann/json.hpp>
 

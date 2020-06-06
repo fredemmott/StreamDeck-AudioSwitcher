@@ -13,8 +13,6 @@ LICENSE file.
 
 #pragma once
 
-#include "ESDCommon.h"
-
 #include <nlohmann/json.hpp>
 
 class ESDConnectionManager;

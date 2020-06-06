@@ -11,7 +11,7 @@ LICENSE file.
 **/
 //==============================================================================
 
-#include "ESDCommon.h"
+#include "ESDLogger.h"
 #include "ESDUtilities.h"
 
 #include "windows.h"
@@ -256,7 +256,7 @@ std::string ESDUtilities::GetPluginPath() {
         }
       }
     } else {
-      DebugPrint("Could not get path.\n");
+      ESDDebug("Could not get path.\n");
     }
   }
 
