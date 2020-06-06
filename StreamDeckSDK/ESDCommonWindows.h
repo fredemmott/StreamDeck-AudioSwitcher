@@ -13,16 +13,9 @@ LICENSE file.
 
 #pragma once
 
-
 //-------------------------------------------------------------------
 // Debug logging
 //-------------------------------------------------------------------
-
-#ifdef _DEBUG
-#define DEBUG 1
-#else
-#define DEBUG 0
-#endif
 
 void __cdecl dbgprintf(const char *format, ...);
 

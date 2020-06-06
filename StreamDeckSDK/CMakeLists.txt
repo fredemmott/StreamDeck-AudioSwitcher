@@ -37,3 +37,17 @@ if (APPLE)
     ${CORE_FOUNDATION_LIBRARY}
   )
 endif()
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+  target_compile_definitions(
+    StreamDeckSDK
+    PUBLIC
+    "-DDEBUG=1"
+  )
+else()
+  target_compile_definitions(
+    StreamDeckSDK
+    PUBLIC
+    "-DDEBUG=0"
+  )
+endif()
