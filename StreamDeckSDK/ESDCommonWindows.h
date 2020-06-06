@@ -11,16 +11,18 @@ LICENSE file.
 **/
 //==============================================================================
 
-#ifndef PCH_H
-#define PCH_H
+#pragma once
 
 //-------------------------------------------------------------------
 // C++ headers
 //-------------------------------------------------------------------
 
-#include <Windows.h>
+// Include order matters
+// clang-format off
 #include <strsafe.h>
 #include <winsock2.h>
+#include <Windows.h>
+// clang-format on
 
 #include <set>
 #include <string>
@@ -50,5 +52,3 @@ void __cdecl dbgprintf(const char *format, ...);
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
-
-#endif// PCH_H
