@@ -15,7 +15,7 @@ class ESDLogger {
 
     void SetWin32DebugPrefix(const std::string& mPrefix);
     void SetConnectionManager(ESDConnectionManager* conn);
-    void LogMessage(ESDLOGGER_FORMAT_STRING(format), ...);
+    void LogMessage(const char* context, ESDLOGGER_FORMAT_STRING(format), ...);
   private:
     ESDLogger();
 
@@ -27,7 +27,7 @@ class ESDLogger {
 };
 
 
-#define ESDLog(...) ESDLogger::Get()->LogMessage(__VA_ARGS__)
+#define ESDLog(...) ESDLogger::Get()->LogMessage(__FILE__, __VA_ARGS__)
 #ifndef NDEBUG
 #define ESDDebug(...) ESDLog(__VA_ARGS__)
 #else
