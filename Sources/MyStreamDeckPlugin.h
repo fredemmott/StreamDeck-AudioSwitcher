@@ -18,6 +18,8 @@ LICENSE file.
 
 #include "AudioFunctions.h"
 
+using json = nlohmann::json;
+
 class CallBackTimer;
 
 class MyStreamDeckPlugin : public ESDBasePlugin {

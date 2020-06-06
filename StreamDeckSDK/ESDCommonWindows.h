@@ -41,10 +41,3 @@ void __cdecl dbgprintf(const char *format, ...);
 #else
 #define DebugPrint(...) while (0)
 #endif
-
-//-------------------------------------------------------------------
-// json
-//-------------------------------------------------------------------
-
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;

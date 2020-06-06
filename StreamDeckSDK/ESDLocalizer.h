@@ -15,6 +15,9 @@ LICENSE file.
 
 #include "ESDCommon.h"
 
+#include <string>
+#include <nlohmann/json.hpp>
+
 class ESDLocalizer {
  public:
   static void Initialize(const std::string &inLanguageCode);
@@ -25,5 +28,5 @@ class ESDLocalizer {
   ESDLocalizer(const std::string &inLanguageCode);
   std::string GetLocalizedStringIntern(const std::string &inDefaultString);
 
-  json mLocalizationData;
+  nlohmann::json mLocalizationData;
 };
