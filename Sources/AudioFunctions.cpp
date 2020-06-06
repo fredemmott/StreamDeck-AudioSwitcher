@@ -38,7 +38,8 @@ std::string WCharPtrToString(LPCWSTR in) {
 }
 
 std::wstring Utf8StrToWString(const std::string& in) {
-  size_t wchar_len = MultiByteToWideChar(CP_UTF8, 0, in.c_str(), in.size(), 0, 0);
+  size_t wchar_len
+    = MultiByteToWideChar(CP_UTF8, 0, in.c_str(), in.size(), 0, 0);
   std::wstring buf(wchar_len, 0);
   MultiByteToWideChar(CP_UTF8, 0, in.c_str(), in.size(), buf.data(), wchar_len);
   return buf;
