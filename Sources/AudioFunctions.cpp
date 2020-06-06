@@ -27,6 +27,9 @@ namespace {
 }
 
 std::string WCharPtrToString(LPCWSTR in) {
+  if (!in) {
+    return std::string();
+  }
   size_t utf8_len = WideCharToMultiByte(CP_UTF8, 0, in, -1, 0, 0, 0, 0);
   std::string buf(utf8_len, 0);
   WideCharToMultiByte(CP_UTF8, 0, in, -1, buf.data(), utf8_len, 0, 0);
@@ -161,8 +164,14 @@ std::string GetDefaultAudioDeviceID(
   de->GetDefaultAudioEndpoint(
     AudioDeviceDirectionToEDataFlow(direction), AudioDeviceRoleToERole(role),
     &device);
+  if (!device) {
+    return std::string();
+  }
   LPWSTR deviceID;
   device->GetId(&deviceID);
+  if (!deviceID) {
+    return std::string();
+  }
   return WCharPtrToString(deviceID);
 }
 
