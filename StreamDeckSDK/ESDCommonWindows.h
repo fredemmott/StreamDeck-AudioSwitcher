@@ -18,12 +18,13 @@ LICENSE file.
 // C++ headers
 //-------------------------------------------------------------------
 
+#include <Windows.h>
 #include <strsafe.h>
 #include <winsock2.h>
+
 #include <set>
 #include <string>
 #include <thread>
-#include <Windows.h>
 
 //-------------------------------------------------------------------
 // Debug logging

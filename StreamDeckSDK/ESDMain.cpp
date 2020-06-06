@@ -78,7 +78,7 @@ int esd_main(int argc, const char** argv, ESDBasePlugin* plugin) {
   ESDLocalizer::Initialize(language);
 
   // Create the connection manager
-  ESDConnectionManager *connectionManager
+  ESDConnectionManager* connectionManager
     = new ESDConnectionManager(port, pluginUUID, registerEvent, info, plugin);
 
   // Connect and start the event loop
