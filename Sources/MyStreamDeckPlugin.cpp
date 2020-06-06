@@ -21,11 +21,6 @@ LICENSE file.
 
 #include "AudioFunctions.h"
 
-#ifdef _MSVC_LANG
-static_assert(_MSVC_LANG > 201402L, "C++17 not enabled in _MSVC_LANG");
-static_assert(_HAS_CXX17, "C++17 feature flag not enabled");
-#endif
-
 namespace {
 const char* SET_ACTION_ID = "com.fredemmott.audiooutputswitch.set";
 const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
