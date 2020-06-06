@@ -13,16 +13,6 @@ LICENSE file.
 
 #pragma once
 
-//-------------------------------------------------------------------
-// C++ headers
-//-------------------------------------------------------------------
-
-// Include order matters
-// clang-format off
-#include <strsafe.h>
-#include <winsock2.h>
-#include <Windows.h>
-// clang-format on
 
 //-------------------------------------------------------------------
 // Debug logging

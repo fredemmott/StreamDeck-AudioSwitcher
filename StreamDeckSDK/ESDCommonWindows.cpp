@@ -13,6 +13,12 @@ LICENSE file.
 
 #include "ESDCommonWindows.h"
 
+// Include order matters
+// clang-format off
+#include <strsafe.h>
+#include <Windows.h>
+// clang-format on
+
 void __cdecl dbgprintf(const char *format, ...) {
   va_list arg;
   va_start(arg, format);
