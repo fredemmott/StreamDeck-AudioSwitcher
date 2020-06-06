@@ -24,10 +24,6 @@ LICENSE file.
 #include <Windows.h>
 // clang-format on
 
-#include <set>
-#include <string>
-#include <thread>
-
 //-------------------------------------------------------------------
 // Debug logging
 //-------------------------------------------------------------------

@@ -14,6 +14,7 @@ LICENSE file.
 #include <StreamDeckSDK/ESDBasePlugin.h>
 
 #include <mutex>
+#include <set>
 
 #include "AudioFunctions.h"
 
