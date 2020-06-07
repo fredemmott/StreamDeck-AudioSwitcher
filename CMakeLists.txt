@@ -19,6 +19,7 @@ endif()
 set(
   CMAKE_INSTALL_PREFIX
   "${STREAMDECK_PLUGIN_DIR}/${CMAKE_PROJECT_NAME}"
+  CACHE STRING "See CMake documentation"
 )
 
 set(CMAKE_CXX_STANDARD 11)
