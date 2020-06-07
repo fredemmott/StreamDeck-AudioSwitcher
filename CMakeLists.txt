@@ -24,11 +24,11 @@ set(
 set(CMAKE_CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED true)
 if (MSVC)
-  add_definitions("/Zc:__cplusplus")
+  add_definitions("/Zc:__cplusplus -DUNICODE=1")
 endif()
 include_directories("${CMAKE_SOURCE_DIR}")
 
-add_subdirectory(Vendor)
-add_subdirectory(StreamDeckSDK)
+include("StreamDeckSDK.cmake")
+
 add_subdirectory(Sources)
 add_subdirectory(sdplugin)
