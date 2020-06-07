@@ -1,0 +1,94 @@
+name: Continuous Integration
+on: [push, pull_request]
+jobs:
+  build:
+    name: Build ${{matrix.os}}/${{matrix.build-type}}
+    runs-on: ${{matrix.os}}-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Make build directory
+        run: cmake -E make_directory build
+      - name: Configure
+        working-directory: build
+        run: |
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{matrix.build-type}} \
+            "-DCMAKE_INSTALL_PREFIX=$(echo "${{runner.temp}}/install" | tr "\\\\" /)"
+        shell: bash
+      - name: Compile
+        working-directory: build
+        run: cmake --build . --config ${{matrix.build-type}} --parallel
+      - name: Install
+        working-directory: build
+        run: cmake --install . --config ${{matrix.build-type}}
+      - name: Upload MacOS Executable
+        if: matrix.os == 'macos'
+        uses: actions/upload-artifact@v2
+        with:
+          name: sdaudioswitch-Mac-${{matrix.build-type}}
+          path: build/Sources/sdaudioswitch
+      - name: Upload Windows Executable
+        if: matrix.os == 'windows'
+        uses: actions/upload-artifact@v2
+        with:
+          name: sdaudioswitch-Windows-${{matrix.build-type}}
+          path: build/Sources/${{matrix.build-type}}/sdaudioswitch.exe
+    strategy:
+      matrix:
+        os: [windows]
+        build-type: [Release, Debug]
+  streamDeckPlugin:
+    name: ${{matrix.build-type}} .streamDeckPlugin
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+      - name: Configure
+        run: |
+          cmake . \
+            -DCMAKE_BUILD_TYPE=${{matrix.build-type}} \
+            -DCMAKE_INSTALL_PREFIX=${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin
+      - name: Install static files
+        working-directory: sdPlugin
+        run: make install
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ${{runner.temp}}/artifacts
+      - name: Copy executables
+        working-directory: ${{runner.temp}}
+        run: |
+          install -m755 \
+            artifacts/sdaudioswitch-Windows-${{matrix.build-type}}/sdaudioswitch.exe \
+            com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch.exe
+      - name: Checkout DistributionTool
+        uses: actions/checkout@v2
+        with:
+          ref: distributiontool-v1.1
+      - name: Build .streamDeckPlugin
+        run: |
+          set +e
+          ./DistributionTool -b \
+            -i ${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin \
+            -o .
+          if [ $? -eq 0 ]; then
+            echo "Distribution tool failed"
+            exit 1
+          else
+            set -e
+            test -f com.fredemmott.audiooutputswitch.streamDeckPlugin
+          fi
+      - name: Build .zip
+        run: |
+          zip \
+          SDAudioSwitcher-${{matrix.build-type}}-${{github.sha}}-streamDeckPlugin.zip \
+          com.fredemmott.audiooutputswitch.streamDeckPlugin
+      - name: Upload Zip
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{matrix.build-type}}-StreamDeckPlugin
+          path: SDAudioSwitcher-${{matrix.build-type}}-${{github.sha}}-streamDeckPlugin.zip
+    strategy:
+      matrix:
+        build-type: [Release, Debug]
