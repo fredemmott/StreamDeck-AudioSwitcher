@@ -16,14 +16,19 @@ elseif (WIN32)
     "$ENV{appdata}/Elgato/StreamDeck/Plugins"
   )
 endif()
-set(
-  CMAKE_INSTALL_PREFIX
-  "${STREAMDECK_PLUGIN_DIR}/${CMAKE_PROJECT_NAME}"
-  CACHE STRING "See CMake documentation"
-)
+message(STATUS "StreamDeck plugin dir: ${STREAMDECK_PLUGIN_DIR}")
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(
+    CMAKE_INSTALL_PREFIX
+    "${STREAMDECK_PLUGIN_DIR}/${CMAKE_PROJECT_NAME}"
+    CACHE PATH "..." FORCE
+  )
+endif()
+message(STATUS "Install dir: ${CMAKE_INSTALL_PREFIX}")
 
 set(CMAKE_CXX_STANDARD 11)
-set(CXX_STANDARD_REQUIRED true)
+set(CMAKE_CXX_STANDARD_REQUIRED true)
+set(CMAKE_CXX_EXTENSIONS false)
 if (MSVC)
   add_definitions("/Zc:__cplusplus -DUNICODE=1")
 endif()
