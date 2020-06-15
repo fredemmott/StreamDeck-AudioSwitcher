@@ -8,10 +8,6 @@
 #include "Functiondiscoverykeys_devpkey.h"
 // clang-format on
 
-#ifdef HAVE_FEEDBACK_SOUNDS
-#include "resource.h"
-#endif
-
 #include "AudioFunctions.h"
 
 #include <StreamDeckSDK/ESDLogger.h>
@@ -32,7 +28,7 @@ std::string WCharPtrToString(LPCWSTR in) {
   if (!in) {
     return std::string();
   }
-  size_t utf8_len = WideCharToMultiByte(CP_UTF8, 0, in, -1, 0, 0, 0, 0);
+  int utf8_len = WideCharToMultiByte(CP_UTF8, 0, in, -1, 0, 0, 0, 0);
   std::string buf(utf8_len, 0);
   WideCharToMultiByte(CP_UTF8, 0, in, -1, buf.data(), utf8_len, 0, 0);
   buf.resize(utf8_len - 1);
@@ -40,7 +36,7 @@ std::string WCharPtrToString(LPCWSTR in) {
 }
 
 std::wstring Utf8StrToWString(const std::string& in) {
-  size_t wchar_len
+  int wchar_len
     = MultiByteToWideChar(CP_UTF8, 0, in.c_str(), in.size(), 0, 0);
   std::wstring buf(wchar_len, 0);
   MultiByteToWideChar(CP_UTF8, 0, in.c_str(), in.size(), buf.data(), wchar_len);
@@ -163,16 +159,22 @@ std::string GetDefaultAudioDeviceID(
   AudioDeviceRole role) {
   CComPtr<IMMDeviceEnumerator> de;
   de.CoCreateInstance(__uuidof(MMDeviceEnumerator));
+  if (!de) {
+    ESDDebug("Failed to create MMDeviceEnumerator");
+    return std::string();
+  }
   CComPtr<IMMDevice> device;
   de->GetDefaultAudioEndpoint(
     AudioDeviceDirectionToEDataFlow(direction), AudioDeviceRoleToERole(role),
     &device);
   if (!device) {
+    ESDDebug("No default audio device");
     return std::string();
   }
   LPWSTR deviceID;
   device->GetId(&deviceID);
   if (!deviceID) {
+    ESDDebug("No default audio device ID");
     return std::string();
   }
   return WCharPtrToString(deviceID);
@@ -339,7 +341,6 @@ class DefaultChangeCallback : public IMMNotificationClient {
     EDataFlow flow,
     ERole winAudioDeviceRole,
     LPCWSTR defaultDeviceID) override {
-    ESDDebug("in native default device callback");
     AudioDeviceRole role;
     switch (winAudioDeviceRole) {
       case ERole::eMultimedia:
@@ -403,10 +404,6 @@ struct DefaultChangeCallbackHandle {
   }
 };
 
-#ifdef HAVE_FEEDBACK_SOUNDS
-const auto muteWav = MAKEINTRESOURCE(IDR_MUTE);
-const auto unmuteWav = MAKEINTRESOURCE(IDR_UNMUTE);
-#endif
 }// namespace
 
 DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE
@@ -427,22 +424,57 @@ AddDefaultAudioDeviceChangeCallback(DefaultChangeCallbackFun cb) {
   return new DefaultChangeCallbackHandle(impl, de);
 }
 
-#ifdef HAVE_FEEDBACK_SOUNDS
-void PlayFeedbackSound(MuteAction action) {
-  assert(action != MuteAction::TOGGLE);
-  const auto feedbackWav = (action == MuteAction::MUTE) ? muteWav : unmuteWav;
-  PlaySound(feedbackWav, GetModuleHandle(NULL), SND_ASYNC | SND_RESOURCE);
-}
-#endif
-
 void RemoveDefaultAudioDeviceChangeCallback(
   DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE _handle) {
   if (!_handle) {
     return;
   }
-  ESDDebug(
-    "RemoveDefaultAudioDeviceChangeCallback called");
+  ESDDebug("RemoveDefaultAudioDeviceChangeCallback called");
   const auto handle = reinterpret_cast<DefaultChangeCallbackHandle*>(_handle);
   delete handle;
   return;
 }
+
+#ifdef HAVE_FEEDBACK_SOUNDS
+namespace {
+std::wstring sMuteWav;
+std::wstring sUnmuteWav;
+
+void initWavPaths() {
+  if (!sMuteWav.empty()) {
+    return;
+  }
+  std::wstring path;
+  path.resize(1024);
+  const auto len = GetModuleFileName(NULL, path.data(), 1024);
+  assert(len);
+  path.resize(len);
+
+  auto idx = path.find_last_of(L'\\');
+  const auto dir = path.substr(0, idx + 1);
+  auto utf8 = WCharPtrToString(dir.c_str());
+  ESDDebug("got executable dir: '%s', %d", utf8.c_str(), idx);
+  sMuteWav = dir + L"mute.wav";
+  sUnmuteWav = dir + L"unmute.wav";
+}
+
+std::wstring muteWavPath() {
+  initWavPaths();
+  return sMuteWav;
+}
+
+std::wstring unmuteWavPath() {
+  initWavPaths();
+  return sUnmuteWav;
+}
+}// namespace
+
+void PlayFeedbackSound(MuteAction action) {
+  assert(action != MuteAction::TOGGLE);
+  const auto feedbackWav
+    = (action == MuteAction::MUTE) ? muteWavPath() : unmuteWavPath();
+  const auto utf8 = WCharPtrToString(feedbackWav.c_str());
+  ESDDebug("Playing feedback sound '%s'", utf8.c_str());
+  PlaySound(feedbackWav.c_str(), NULL, SND_ASYNC | SND_NODEFAULT);
+}
+#endif
