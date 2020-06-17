@@ -35,7 +35,7 @@
   "CodePath": "sdaudioswitch.exe",
   "CodePathWin": "sdaudioswitch.exe",
   "Description": "Toggle or set the active audio devices.",
-  "Name": "Audio Output",
+  "Name": "Audio Switcher",
   "PropertyInspectorPath": "propertyinspector/index.html",
   "Icon": "headphones",
   "Version": "${CMAKE_PROJECT_VERSION}",
