@@ -1,6 +1,21 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 
-project(com.fredemmott.audiooutputswitch.sdPlugin VERSION 2.4)
+# CMAKE_MSVC_RUNTIME_LIBRARY support
+cmake_policy(SET CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+project(
+  com.fredemmott.audiooutputswitch.sdPlugin
+  LANGUAGES CXX
+  VERSION 2.4
+)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED true)
+set(CMAKE_CXX_EXTENSIONS false)
+if (MSVC)
+  add_definitions("/Zc:__cplusplus -DUNICODE=1")
+endif()
 
 if (APPLE)
   set(
@@ -26,12 +41,6 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 message(STATUS "Install dir: ${CMAKE_INSTALL_PREFIX}")
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED true)
-set(CMAKE_CXX_EXTENSIONS false)
-if (MSVC)
-  add_definitions("/Zc:__cplusplus -DUNICODE=1")
-endif()
 include_directories("${CMAKE_SOURCE_DIR}")
 
 include("StreamDeckSDK.cmake")
