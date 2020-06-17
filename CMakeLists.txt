@@ -7,7 +7,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 project(
   com.fredemmott.audiooutputswitch.sdPlugin
   LANGUAGES CXX
-  VERSION 2.5
+  VERSION 2.6
 )
 
 set(CMAKE_CXX_STANDARD 11)
