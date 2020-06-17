@@ -37,6 +37,6 @@ include_directories("${CMAKE_SOURCE_DIR}")
 include("StreamDeckSDK.cmake")
 
 add_subdirectory(Sources)
-add_subdirectory(sdplugin)
+add_subdirectory(sdPlugin)
 
 install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_PREFIX})
