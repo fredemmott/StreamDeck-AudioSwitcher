@@ -15,6 +15,7 @@ jobs:
         run: cmake -E make_directory build
       - name: Configure
         working-directory: build
+        shell: pwsh
         run: |
           cmake ${{github.workspace}}\source `
             -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
