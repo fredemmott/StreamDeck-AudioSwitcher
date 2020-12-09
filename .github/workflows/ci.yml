@@ -5,6 +5,9 @@ jobs:
     name: Build ${{matrix.os}}/${{matrix.build-type}}
     runs-on: ${{matrix.os}}-latest
     steps:
+      - name: Fetch code-signing key
+        if: matrix.os == 'windows' && env.CODE_SIGNING_PFX_BASE64 != ''
+        run: '[System.Convert]::FromBase64String($Env:CODE_SIGNING_PFX_BASE64) | Set-Content ${{runner.temp}}/MyCert.pfx -AsByteStream'
       - uses: actions/checkout@v2
         with:
           path: source
@@ -15,7 +18,9 @@ jobs:
         run: |
           cmake ${{github.workspace}}\source `
             -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
-            "-DCMAKE_INSTALL_PREFIX=${{github.workspace}}/com.fredemmott.audiooutputswitch.sdPlugin"
+            "-DCMAKE_INSTALL_PREFIX=${{github.workspace}}/com.fredemmott.audiooutputswitch.sdPlugin" `
+            "-DSIGNTOOL_KEY_FILE=${{runner.temp}}/MyCert.pfx" `
+            "-DCMAKE_INSTALL_PREFIX=${{runner.temp}}/install"
       - name: Compile
         working-directory: build
         run: cmake --build . --config ${{matrix.build-type}} --parallel

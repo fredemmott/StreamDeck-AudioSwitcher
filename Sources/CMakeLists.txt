@@ -12,4 +12,5 @@ add_executable(
   ${SOURCES}
 )
 target_link_libraries(sdaudioswitch StreamDeckSDK)
+sign_target(sdaudioswitch)
 install(TARGETS sdaudioswitch DESTINATION ${CMAKE_INSTALL_PREFIX})
