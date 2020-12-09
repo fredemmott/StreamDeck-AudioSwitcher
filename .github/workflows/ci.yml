@@ -4,6 +4,8 @@ jobs:
   build:
     name: Build ${{matrix.os}}/${{matrix.build-type}}
     runs-on: ${{matrix.os}}-latest
+    env:
+      CODE_SIGNING_PFX_BASE64: ${{secrets.CODE_SIGNING_PFX_BASE64}}
     steps:
       - name: Fetch code-signing key
         if: matrix.os == 'windows' && env.CODE_SIGNING_PFX_BASE64 != ''
