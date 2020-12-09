@@ -19,6 +19,7 @@ function(sign_target TARGET)
   if(SIGNTOOL_KEY_FILE AND WIN32 AND EXISTS "${SIGNTOOL_KEY_FILE}")
     add_custom_command(
       TARGET ${TARGET} POST_BUILD
+      COMMENT "Signing executable with signtool"
       COMMAND
       "${SIGNTOOL_EXE}"
       ARGS
