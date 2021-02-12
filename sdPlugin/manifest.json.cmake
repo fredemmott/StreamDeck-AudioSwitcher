@@ -32,7 +32,7 @@
     }
   ],
   "Author": "Fred Emmott",
-  "CodePath": "sdaudioswitch.exe",
+  "CodePathMac": "sdaudioswitch",
   "CodePathWin": "sdaudioswitch.exe",
   "Description": "Toggle or set the active audio devices.",
   "Name": "Audio Switcher",
@@ -43,6 +43,10 @@
     {
       "Platform": "windows",
       "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.14"
     }
   ],
   "SDKVersion": 2,
