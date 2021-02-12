@@ -100,7 +100,7 @@ void MyStreamDeckPlugin::KeyUpForAction(
   const std::string& inContext,
   const json& inPayload,
   const std::string& inDeviceID) {
-  ESDDebug("Key Up: %s", inPayload.dump().c_str());
+  ESDDebug("Key Up: {}", inPayload.dump());
   std::scoped_lock lock(mVisibleContextsMutex);
 
   const auto settings = ButtonSettingsFromJSON(inPayload);
@@ -146,7 +146,7 @@ void MyStreamDeckPlugin::WillAppearForAction(
   mVisibleContexts.insert(inContext);
   const auto settings = ButtonSettingsFromJSON(inPayload);
   ESDDebug(
-    "Will appear: %s %s", settings.primaryDevice.c_str(), inAction.c_str());
+    "Will appear: {} {}", settings.primaryDevice.c_str(), inAction.c_str());
   mButtons[inContext] = {inAction, inContext, settings};
   UpdateState(inContext);
 }
@@ -170,7 +170,7 @@ void MyStreamDeckPlugin::SendToPlugin(
   json outPayload;
 
   const auto event = EPLJSONUtils::GetStringByName(inPayload, "event");
-  ESDDebug("Received event %s", event.c_str());
+  ESDDebug("Received event {}", event);
 
   if (event == "getDeviceList") {
     const auto outputList = GetAudioDeviceList(AudioDeviceDirection::OUTPUT);
@@ -216,8 +216,8 @@ void MyStreamDeckPlugin::UpdateState(
         ? GetDefaultAudioDeviceID(settings.direction, settings.role)
         : optionalDefaultDevice;
   ESDDebug(
-    "setting active ID %s %s %s", activeDevice.c_str(),
-    settings.primaryDevice.c_str(), settings.secondaryDevice.c_str());
+    "setting active ID {} {} {}", activeDevice,
+    settings.primaryDevice, settings.secondaryDevice);
 
   std::scoped_lock lock(mVisibleContextsMutex);
   if (action == SET_ACTION_ID) {
