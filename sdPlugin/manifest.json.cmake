@@ -38,6 +38,8 @@
   "Name": "Audio Switcher",
   "PropertyInspectorPath": "propertyinspector/index.html",
   "Icon": "headphones",
+  "Category": "Audio Devices",
+  "CategoryIcon": "glyphicons-basic-140-adjust",
   "Version": "${CMAKE_PROJECT_VERSION}",
   "OS": [
     {
