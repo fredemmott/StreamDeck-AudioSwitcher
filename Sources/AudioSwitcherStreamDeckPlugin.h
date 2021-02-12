@@ -1,6 +1,6 @@
 //==============================================================================
 /**
-@file       MyStreamDeckPlugin.h
+@file       AudioSwitcherStreamDeckPlugin.h
 
 @brief      CPU plugin
 
@@ -23,10 +23,10 @@ using namespace FredEmmott::Audio;
 
 class CallBackTimer;
 
-class MyStreamDeckPlugin : public ESDBasePlugin {
+class AudioSwitcherStreamDeckPlugin : public ESDBasePlugin {
  public:
-  MyStreamDeckPlugin();
-  virtual ~MyStreamDeckPlugin();
+  AudioSwitcherStreamDeckPlugin();
+  virtual ~AudioSwitcherStreamDeckPlugin();
 
   void KeyDownForAction(
     const std::string& inAction,

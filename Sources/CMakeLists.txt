@@ -2,7 +2,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(
   SOURCES
-  MyStreamDeckPlugin.cpp
+  AudioSwitcherStreamDeckPlugin.cpp
   main.cpp
 )
 if(WIN32)

@@ -1,6 +1,6 @@
 //==============================================================================
 /**
-@file       MyStreamDeckPlugin.cpp
+@file       AudioSwitcherStreamDeckPlugin.cpp
 
 @brief      CPU plugin
 
@@ -11,7 +11,7 @@ LICENSE file.
 **/
 //==============================================================================
 
-#include "MyStreamDeckPlugin.h"
+#include "AudioSwitcherStreamDeckPlugin.h"
 
 #include <StreamDeckSDK/EPLJSONUtils.h>
 #include <StreamDeckSDK/ESDConnectionManager.h>
@@ -72,22 +72,22 @@ void to_json(json& j, const AudioDeviceState& state) {
   }
 }
 
-MyStreamDeckPlugin::MyStreamDeckPlugin() {
+AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
 #ifdef _MSC_VER
   CoInitialize(NULL);// initialize COM for the main thread
 #endif
   mCallbackHandle = std::move(AddDefaultAudioDeviceChangeCallback(std::bind(
-    &MyStreamDeckPlugin::OnDefaultDeviceChanged, this, std::placeholders::_1,
+    &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged, this, std::placeholders::_1,
     std::placeholders::_2, std::placeholders::_3)));
   ESDDebug("stored handle");
 }
 
-MyStreamDeckPlugin::~MyStreamDeckPlugin() {
+AudioSwitcherStreamDeckPlugin::~AudioSwitcherStreamDeckPlugin() {
   ESDDebug("plugin destructor");
   mCallbackHandle.reset();
 }
 
-void MyStreamDeckPlugin::OnDefaultDeviceChanged(
+void AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged(
   AudioDeviceDirection direction,
   AudioDeviceRole role,
   const std::string& device) {
@@ -104,7 +104,7 @@ void MyStreamDeckPlugin::OnDefaultDeviceChanged(
   }
 }
 
-void MyStreamDeckPlugin::KeyDownForAction(
+void AudioSwitcherStreamDeckPlugin::KeyDownForAction(
   const std::string& inAction,
   const std::string& inContext,
   const json& inPayload,
@@ -112,7 +112,7 @@ void MyStreamDeckPlugin::KeyDownForAction(
   const auto state = EPLJSONUtils::GetIntByName(inPayload, "state");
 }
 
-void MyStreamDeckPlugin::KeyUpForAction(
+void AudioSwitcherStreamDeckPlugin::KeyUpForAction(
   const std::string& inAction,
   const std::string& inContext,
   const json& inPayload,
@@ -153,7 +153,7 @@ void MyStreamDeckPlugin::KeyUpForAction(
   SetDefaultAudioDeviceID(settings.direction, settings.role, deviceId);
 }
 
-void MyStreamDeckPlugin::WillAppearForAction(
+void AudioSwitcherStreamDeckPlugin::WillAppearForAction(
   const std::string& inAction,
   const std::string& inContext,
   const json& inPayload,
@@ -168,7 +168,7 @@ void MyStreamDeckPlugin::WillAppearForAction(
   UpdateState(inContext);
 }
 
-void MyStreamDeckPlugin::WillDisappearForAction(
+void AudioSwitcherStreamDeckPlugin::WillDisappearForAction(
   const std::string& inAction,
   const std::string& inContext,
   const json& inPayload,
@@ -179,7 +179,7 @@ void MyStreamDeckPlugin::WillDisappearForAction(
   mButtons.erase(inContext);
 }
 
-void MyStreamDeckPlugin::SendToPlugin(
+void AudioSwitcherStreamDeckPlugin::SendToPlugin(
   const std::string& inAction,
   const std::string& inContext,
   const json& inPayload,
@@ -201,7 +201,7 @@ void MyStreamDeckPlugin::SendToPlugin(
   }
 }
 
-MyStreamDeckPlugin::ButtonSettings MyStreamDeckPlugin::ButtonSettingsFromJSON(
+AudioSwitcherStreamDeckPlugin::ButtonSettings AudioSwitcherStreamDeckPlugin::ButtonSettingsFromJSON(
   const json& inPayload) {
   ButtonSettings settings;
   json jsonSettings;
@@ -222,7 +222,7 @@ MyStreamDeckPlugin::ButtonSettings MyStreamDeckPlugin::ButtonSettingsFromJSON(
   return settings;
 }
 
-void MyStreamDeckPlugin::UpdateState(
+void AudioSwitcherStreamDeckPlugin::UpdateState(
   const std::string& context,
   const std::string& optionalDefaultDevice) {
   const auto button = mButtons[context];
@@ -252,20 +252,20 @@ void MyStreamDeckPlugin::UpdateState(
   }
 }
 
-void MyStreamDeckPlugin::DeviceDidConnect(
+void AudioSwitcherStreamDeckPlugin::DeviceDidConnect(
   const std::string& inDeviceID,
   const json& inDeviceInfo) {
   // Nothing to do
 }
 
-void MyStreamDeckPlugin::DeviceDidDisconnect(const std::string& inDeviceID) {
+void AudioSwitcherStreamDeckPlugin::DeviceDidDisconnect(const std::string& inDeviceID) {
   // Nothing to do
 }
 
-void MyStreamDeckPlugin::DidReceiveGlobalSettings(const json& inPayload) {
+void AudioSwitcherStreamDeckPlugin::DidReceiveGlobalSettings(const json& inPayload) {
 }
 
-void MyStreamDeckPlugin::DidReceiveSettings(
+void AudioSwitcherStreamDeckPlugin::DidReceiveSettings(
   const std::string& inAction,
   const std::string& inContext,
   const json& inPayload,
