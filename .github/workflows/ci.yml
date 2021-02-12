@@ -32,3 +32,4 @@ jobs:
     strategy:
       matrix:
         os: [windows, macos]
+        build-type: [RelWithDebInfo, Debug]
