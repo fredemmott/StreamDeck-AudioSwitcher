@@ -2,14 +2,71 @@ name: Continuous Integration
 on: [push, pull_request]
 jobs:
   build:
-    name: Build ${{matrix.os}}/${{matrix.build-type}}
+    name: Build ${{matrix.os}}/${{matrix.arch}}/${{matrix.build-type}}
     runs-on: ${{matrix.os}}-latest
-    env:
-      CODE_SIGNING_PFX_BASE64: ${{secrets.CODE_SIGNING_PFX_BASE64}}
     steps:
+      - uses: actions/checkout@v2
+        with:
+          path: source
+      - name: Make build directory
+        run: cmake -E make_directory build
       - name: Fetch code-signing key
-        if: matrix.os == 'windows' && env.CODE_SIGNING_PFX_BASE64 != ''
+        if: matrix.os == 'windows'
+        env:
+          CODE_SIGNING_PFX_BASE64: ${{ secrets.CODE_SIGNING_PFX_BASE64 }}
         run: '[System.Convert]::FromBase64String($Env:CODE_SIGNING_PFX_BASE64) | Set-Content ${{runner.temp}}/MyCert.pfx -AsByteStream'
+      - name: Configure
+        working-directory: build
+        shell: pwsh
+        run: |
+          cmake ${{github.workspace}}/source `
+            "-DSIGNTOOL_KEY_ARGS=/f;${{runner.temp}}/MyCert.pfx" `
+            -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
+            -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} `
+            "-DCMAKE_INSTALL_PREFIX=${{github.workspace}}/com.fredemmott.audiooutputswitch.sdPlugin"
+      - name: Compile
+        working-directory: build
+        run: cmake --build . --config ${{matrix.build-type}} --parallel
+      - name: Install
+        working-directory: build
+        run: cmake --install . --config ${{matrix.build-type}}
+      - name: Upload MacOS Executable
+        if: matrix.os == 'macos'
+        uses: actions/upload-artifact@v2
+        with:
+          name: MacOS-${{matrix.arch}}-${{matrix.build-type}}
+          path: build/Sources/sdaudioswitch
+      - name: Upload Windows Executable
+        if: matrix.os == 'windows'
+        uses: actions/upload-artifact@v2
+        with:
+          name: Windows-${{matrix.build-type}}
+          path: build/Sources/${{matrix.build-type}}/sdaudioswitch.exe
+      - name: Upload Windows Debug Symbols
+        if: matrix.os == 'windows' && matrix.build_type != 'Release'
+        uses: actions/upload-artifact@v2
+        with:
+          name: Windows-${{matrix.build-type}}
+          path: build/Sources/${{matrix.build-type}}/sdaudioswitch.pdb
+    strategy:
+      matrix:
+        target: [windows, macos-arm64, macos-x86_64]
+        build-type: [RelWithDebInfo, Debug]
+        include:
+          - target: windows
+            os: windows
+            arch: x86_64
+          - target: macos-arm64
+            os: macos
+            arch: arm64
+          - target: macos-x86_64
+            os: macos
+            arch: x86_64
+  streamDeckPlugin:
+    name: streamDeckPlugin/${{matrix.build-type}}
+    needs: [build]
+    runs-on: macos-latest
+    steps:
       - uses: actions/checkout@v2
         with:
           path: source
@@ -19,17 +76,97 @@ jobs:
         working-directory: build
         shell: pwsh
         run: |
-          cmake ${{github.workspace}}\source `
-            -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
-            "-DCMAKE_INSTALL_PREFIX=${{github.workspace}}/com.fredemmott.audiooutputswitch.sdPlugin" `
-            "-DSIGNTOOL_KEY_FILE=${{runner.temp}}/MyCert.pfx"
-      - name: Compile
-        working-directory: build
-        run: cmake --build . --config ${{matrix.build-type}} --parallel
-      - name: Install
-        working-directory: build
-        run: cmake --install . --config ${{matrix.build-type}}
+          cmake ${{github.workspace}}/source `
+            "-DCMAKE_INSTALL_PREFIX=${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin"
+      - name: Install static files
+        working-directory: build/sdPlugin
+        run: make install
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ${{runner.temp}}/artifacts
+      - name: Display downloaded files
+        run: ls -R
+        working-directory: ${{runner.temp}}/artifacts
+      - name: Copy executables
+        working-directory: ${{runner.temp}}
+        run: |
+          lipo -create \
+            artifacts/MacOS-arm64-${{matrix.build-type}}/sdaudioswitch \
+            artifacts/MacOS-x86_64-${{matrix.build-type}}/sdaudioswitch \
+            -output com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch
+          install -m755 \
+            artifacts/Windows-${{matrix.build-type}}/sdaudioswitch.exe \
+            com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch.exe
+          PDB_SRC=artifacts/Windows-${{matrix.build-type}}/sdaudioswitch.pdb
+          if [ -e $PDB_SRC ]; then
+            install -m755 \
+              ${PDB_SRC} \
+              com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch.pdb
+          fi
+      - name: Checkout DistributionTool
+        uses: actions/checkout@v2
+        with:
+          ref: distributiontool-v1.4
+      - name: Build .streamDeckPlugin
+        run: |
+          ./DistributionTool -b \
+            -i ${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin \
+            -o .
+      - name: Upload .streamDeckPlugin
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{matrix.build-type}}-StreamDeckPlugin
+          path: com.fredemmott.audiooutputswitch.streamDeckPlugin
     strategy:
       matrix:
-        os: [windows, macos]
         build-type: [RelWithDebInfo, Debug]
+  release:
+    needs: [streamDeckPlugin]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        path: ${{runner.temp}}/artifacts
+    - name: Display downloaded files
+      run: ls -R
+      working-directory: ${{runner.temp}}/artifacts
+    - name: Check if this is a release push
+      id: ref
+      run: |
+        if echo ${{github.ref}} | grep --silent refs/tags/v; then
+          echo "::set-output name=is-release::true"
+          echo "::set-output name=tag::$(echo ${{github.ref}} | awk -F/ '{print $NF}')"
+        else
+          echo "::set-output name=is-release::false"
+        fi
+    - name: Create Draft Release
+      id: create-release
+      if: steps.ref.outputs.is-release == 'true'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        release_name: Release ${{ steps.ref.outputs.tag }}
+        tag_name: ${{steps.ref.outputs.tag}}
+        draft: true
+    - name: Attach Release Build
+      if: steps.ref.outputs.is-release == 'true'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create-release.outputs.upload_url }}
+        asset_path: ${{runner.temp}}/artifacts/RelWithDebInfo-StreamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
+        asset_name: com.fredemmott.audiooutputswitch.streamDeckPlugin
+        asset_content_type: application/octet-stream
+    - name: Attach Debug Build
+      if: steps.ref.outputs.is-release == 'true'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create-release.outputs.upload_url }}
+        asset_path: ${{runner.temp}}/artifacts/Debug-StreamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
+        asset_name: debug-com.fredemmott.audiooutputswitch.streamDeckPlugin
+        asset_content_type: application/octet-stream

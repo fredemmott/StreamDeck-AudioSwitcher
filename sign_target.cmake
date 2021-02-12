@@ -5,26 +5,25 @@ if(WIN32)
     ABSOLUTE CACHE
   )
   set(WINDOWS_10_KIT_DIR "${WINDOWS_10_KITS_ROOT}/bin/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}" CACHE PATH "Current Windows 10 kit directory")
-  set(SIGNTOOL_KEY_FILE "" CACHE PATH "Path to signing key file in .pfx format")
+  set(SIGNTOOL_KEY_ARGS "" CACHE STRING "Key arguments for signtool.exe - separate with ';'")
   find_program(
     SIGNTOOL_EXE
     signtool
     PATHS
     "${WINDOWS_10_KIT_DIR}/x64"
     "${WINDOWS_10_KIT_DIR}/x86"
-    DOC "Path to signtool.exe if SIGNTOOL_KEY_FILE is set"
+    DOC "Path to signtool.exe if SIGNTOOL_KEY_ARGS is set"
   )
 endif()
 function(sign_target TARGET)
-  if(SIGNTOOL_KEY_FILE AND WIN32 AND EXISTS "${SIGNTOOL_KEY_FILE}")
+  if(SIGNTOOL_KEY_ARGS AND WIN32)
     add_custom_command(
       TARGET ${TARGET} POST_BUILD
-      COMMENT "Signing executable with signtool"
       COMMAND
       "${SIGNTOOL_EXE}"
       ARGS
       sign
-      /f "${SIGNTOOL_KEY_FILE}"
+      ${SIGNTOOL_KEY_ARGS}
       /t http://timestamp.digicert.com
       /fd SHA256
       "$<TARGET_FILE:${TARGET}>"
