@@ -2,197 +2,204 @@
 <html>
 
 <head>
-	<title>com.fredemmott.audioutputswitch PI</title>
-	<meta charset="utf-8" />
-	<link rel="stylesheet" href="css/sdpi.css">
+    <title>com.fredemmott.audioutputswitch PI</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="css/sdpi.css">
+    <style>
+        .platform-mac .windows-only {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
-	<div class="sdpi-wrapper hidden" id="mainWrapper">
-		<div type="radio" class="sdpi-item">
-			<div class="sdpi-item-label">Direction</div>
-			<div class="sdpi-item-value">
-				<span class="sdpi-item-child">
-					<input id="input" type="radio" name="direction" value="input" onchange="updateDirection();" />
-					<label for="input" class="sdpi-item-label"><span></span>Input</label>
-				</span>
-				<span class="sdpi-item-child">
-					<input id="output" type="radio" name="direction" value="output" onchange="updateDirection();" />
-					<label for="output" class="sdpi-item-label"><span></span>Output</label>
-				</span>
-			</div>
-		</div>
-		<div type="radio" class="sdpi-item">
-			<div class="sdpi-item-label">Role</div>
-			<div class="sdpi-item-value">
-				<span class="sdpi-item-child">
-					<input id="defaultRole" type="radio" name="role" value="default" onchange="saveSettings();" />
-					<label for="defaultRole" class="sdpi-item-label"><span></span>Default</label>
-				</span>
-				<span class="sdpi-item-child">
-					<input id="communicationRole" type="radio" name="role" value="communication" onchange="saveSettings();" />
-					<label for="communicationRole" class="sdpi-item-label"><span></span>Communications</label>
-				</span>
-			</div>
-		</div>
-		<div type="select" class="sdpi-item" id="primaryDeviceDiv">
-			<div class="sdpi-item-label">Primary</div>
-			<select class="sdpi-item-value select" id="primaryDevice" onchange="saveSettings();">
-			</select>
-		</div>
-		<div type="select" class="sdpi-item" id="secondaryDeviceDiv">
-			<div class="sdpi-item-label">Secondary</div>
-			<select class="sdpi-item-value select" id="secondaryDevice" onchange="saveSettings();">
-			</select>
-		</div>
-	</div>
+    <div class="sdpi-wrapper hidden" id="mainWrapper">
+        <div type="radio" class="sdpi-item">
+            <div class="sdpi-item-label">Direction</div>
+            <div class="sdpi-item-value">
+                <span class="sdpi-item-child">
+                    <input id="input" type="radio" name="direction" value="input" onchange="updateDirection();" />
+                    <label for="input" class="sdpi-item-label"><span></span>Input</label>
+                </span>
+                <span class="sdpi-item-child">
+                    <input id="output" type="radio" name="direction" value="output" onchange="updateDirection();" />
+                    <label for="output" class="sdpi-item-label"><span></span>Output</label>
+                </span>
+            </div>
+        </div>
+        <div type="radio" class="sdpi-item windows-only">
+            <div class="sdpi-item-label">Role</div>
+            <div class="sdpi-item-value">
+                <span class="sdpi-item-child">
+                    <input id="defaultRole" type="radio" name="role" value="default" onchange="saveSettings();" />
+                    <label for="defaultRole" class="sdpi-item-label"><span></span>Default</label>
+                </span>
+                <span class="sdpi-item-child">
+                    <input id="communicationRole" type="radio" name="role" value="communication" onchange="saveSettings();" />
+                    <label for="communicationRole" class="sdpi-item-label"><span></span>Communications</label>
+                </span>
+            </div>
+        </div>
+        <div type="select" class="sdpi-item" id="primaryDeviceDiv">
+            <div class="sdpi-item-label">Primary</div>
+            <select class="sdpi-item-value select" id="primaryDevice" onchange="saveSettings();">
+            </select>
+        </div>
+        <div type="select" class="sdpi-item" id="secondaryDeviceDiv">
+            <div class="sdpi-item-label">Secondary</div>
+            <select class="sdpi-item-value select" id="secondaryDevice" onchange="saveSettings();">
+            </select>
+        </div>
+    </div>
 
-	<script src="common.js"></script>
-	<script>
+    <script src="common.js"></script>
+    <script>
 
-		/** Step 1: Subscribe to the 'connected' event
-		 * and call your own initialization method.
-		 * The connected - event is emitted, when StreamDeck
-		 * has established a connection.
-		 * The 'connected' event carries a JSON object containing
-		 * necessary information about the connection and the
-		 * inital data.
-		 */
-		var uuid,
-			actionInfo,
-			inputDevices,
-			outputDevices,
-			settings,
-			ctx;
+        /** Step 1: Subscribe to the 'connected' event
+         * and call your own initialization method.
+         * The connected - event is emitted, when StreamDeck
+         * has established a connection.
+         * The 'connected' event carries a JSON object containing
+         * necessary information about the connection and the
+         * inital data.
+         */
+        var uuid,
+            actionInfo,
+            inputDevices,
+            outputDevices,
+            settings,
+            ctx;
 
-		$SD.on('connected', (jsonObj) => connected(jsonObj));
-		$SD.on('sendToPropertyInspector', (jsonObj) => receivedDataFromPlugin(jsonObj));
+        $SD.on('connected', (jsonObj) => connected(jsonObj));
+        $SD.on('sendToPropertyInspector', (jsonObj) => receivedDataFromPlugin(jsonObj));
 
-		function receivedDataFromPlugin(jsonObj) {
-			const payload = jsonObj['payload'];
-			if (payload['event'] !== "getDeviceList") {
-				return;
-			}
+        function receivedDataFromPlugin(jsonObj) {
+            const payload = jsonObj['payload'];
+            if (payload['event'] !== "getDeviceList") {
+                return;
+            }
 
-			const isInput = settings.direction == "input";
-			document.getElementById('input').checked = isInput;
-			document.getElementById('output').checked = !isInput;
+            const isInput = settings.direction == "input";
+            document.getElementById('input').checked = isInput;
+            document.getElementById('output').checked = !isInput;
 
-			const isCommunication = settings.role == "communication";
-			document.getElementById('communicationRole').checked = isCommunication;
-			document.getElementById('defaultRole').checked = !isCommunication;
+            const isCommunication = settings.role == "communication";
+            document.getElementById('communicationRole').checked = isCommunication;
+            document.getElementById('defaultRole').checked = !isCommunication;
 
-			inputDevices = payload['inputDevices'];
-			outputDevices = payload['outputDevices'];
+            inputDevices = payload['inputDevices'];
+            outputDevices = payload['outputDevices'];
 
-			updateDeviceLists(isInput ? inputDevices : outputDevices);
-			document.getElementById('mainWrapper').classList.remove('hidden');
-			saveSettings();
-		}
+            updateDeviceLists(isInput ? inputDevices : outputDevices);
+            document.getElementById('mainWrapper').classList.remove('hidden');
+            saveSettings();
+        }
 
-		function updateDeviceLists(devices) {
-			const primarySelector = document.getElementById('primaryDevice');
-			const secondarySelector = document.getElementById('secondaryDevice');
-			const primaryId = settings['primary'];
-			const secondaryId = settings['secondary'];
+        function updateDeviceLists(devices) {
+            const primarySelector = document.getElementById('primaryDevice');
+            const secondarySelector = document.getElementById('secondaryDevice');
+            const primaryId = settings['primary'];
+            const secondaryId = settings['secondary'];
 
-			const state_sort = {
-				"connected": 0,
-				"device_present_no_connection": 1,
-				"device_not_present": 2,
-				"device_disabled": 3,
-			};
+            const state_sort = {
+                "connected": 0,
+                "device_present_no_connection": 1,
+                "device_not_present": 2,
+                "device_disabled": 3,
+            };
 
-			while (primarySelector.firstChild) {
-				primarySelector.removeChild(primarySelector.firstChild);
-				secondarySelector.removeChild(secondarySelector.firstChild);
-			}
+            while (primarySelector.firstChild) {
+                primarySelector.removeChild(primarySelector.firstChild);
+                secondarySelector.removeChild(secondarySelector.firstChild);
+            }
 
-			const sortedIds= Object.keys(devices).sort((a_id, b_id) => {
-				const a = devices[a_id];
-				const b = devices[b_id];
+            const sortedIds= Object.keys(devices).sort((a_id, b_id) => {
+                const a = devices[a_id];
+                const b = devices[b_id];
 
-				if (state_sort[a.state] < state_sort[b.state]) {
-					return -1;
-				}
-				if (state_sort[a.state] > state_sort[b.state]) {
-					return 1;
-				}
-				if (a.displayName < b.displayName) {
-					return -1;
-				}
-				if (a.displayName > b.displayName) {
-					return 1;
-				}
-				return 0;
-			});
+                if (state_sort[a.state] < state_sort[b.state]) {
+                    return -1;
+                }
+                if (state_sort[a.state] > state_sort[b.state]) {
+                    return 1;
+                }
+                if (a.displayName < b.displayName) {
+                    return -1;
+                }
+                if (a.displayName > b.displayName) {
+                    return 1;
+                }
+                return 0;
+            });
 
-			sortedIds.forEach(deviceId => {
-				const device = devices[deviceId];
+            sortedIds.forEach(deviceId => {
+                const device = devices[deviceId];
 
-				const isPrimary = (deviceId === primaryId);
-				const isSecondary = (deviceId === secondaryId);
+                const isPrimary = (deviceId === primaryId);
+                const isSecondary = (deviceId === secondaryId);
 
-				if (device.state !== "connected" && device.state !== "device_present_no_connection" && !(isPrimary || isSecondary)) {
-					return;
-				}
+                if (device.state !== "connected" && device.state !== "device_present_no_connection" && !(isPrimary || isSecondary)) {
+                    return;
+                }
 
-				const displayName = device.displayName + {
-					"connected": "",
-					"device_present_no_connection": " (unplugged)",
-					"device_not_present": " (not present)",
-					"device_disabled": " (disabled)"
-				}[device.state];
+                const displayName = device.displayName + {
+                    "connected": "",
+                    "device_present_no_connection": " (unplugged)",
+                    "device_not_present": " (not present)",
+                    "device_disabled": " (disabled)"
+                }[device.state];
 
-				const primaryOption = document.createElement("option");
-				primaryOption.setAttribute("value", deviceId);
-				primaryOption.setAttribute("label", displayName);
-				const secondaryOption = primaryOption.cloneNode();
+                const primaryOption = document.createElement("option");
+                primaryOption.setAttribute("value", deviceId);
+                primaryOption.setAttribute("label", displayName);
+                const secondaryOption = primaryOption.cloneNode();
 
-				if (isPrimary) {
-					primaryOption.setAttribute("selected", true);
-				}
-				if (isSecondary) {
-					secondaryOption.setAttribute("selected", true);
-				}
+                if (isPrimary) {
+                    primaryOption.setAttribute("selected", true);
+                }
+                if (isSecondary) {
+                    secondaryOption.setAttribute("selected", true);
+                }
 
-				primarySelector.appendChild(primaryOption);
-				secondarySelector.appendChild(secondaryOption);
-			});
-		}
+                primarySelector.appendChild(primaryOption);
+                secondarySelector.appendChild(secondaryOption);
+            });
+        }
 
-		function updateDirection() {
-			if (document.getElementById('input').checked) {
-				updateDeviceLists(inputDevices);
-			} else {
-				updateDeviceLists(outputDevices);
-			}
-			saveSettings();
-		}
+        function updateDirection() {
+            if (document.getElementById('input').checked) {
+                updateDeviceLists(inputDevices);
+            } else {
+                updateDeviceLists(outputDevices);
+            }
+            saveSettings();
+        }
 
-		function connected(jsonObj) {
-			uuid = jsonObj.uuid;
-			actionInfo = jsonObj.actionInfo.action;
-			ctx = jsonObj.actionInfo.context;
-			settings = jsonObj.actionInfo.payload.settings;
+        function connected(jsonObj) {
+            uuid = jsonObj.uuid;
+            actionInfo = jsonObj.actionInfo.action;
+            ctx = jsonObj.actionInfo.context;
+            settings = jsonObj.actionInfo.payload.settings;
+            const platform = jsonObj.applicationInfo.application.platform;
+            document.getElementById('mainWrapper').classList.add(`platform-${platform}`);
 
-			if (actionInfo == "com.fredemmott.audiooutputswitch.set") {
-				document.querySelector('#primaryDeviceDiv .sdpi-item-label').innerText = 'Device';
-				document.getElementById('secondaryDeviceDiv').style.display = 'none';
-			}
+            if (actionInfo == "com.fredemmott.audiooutputswitch.set") {
+                document.querySelector('#primaryDeviceDiv .sdpi-item-label').innerText = 'Device';
+                document.getElementById('secondaryDeviceDiv').style.display = 'none';
+            }
 
-			// request settings and list of devices
-			$SD.api.sendToPlugin(uuid, actionInfo, {event: "getDeviceList"});
-		};
+            // request settings and list of devices
+            $SD.api.sendToPlugin(uuid, actionInfo, {event: "getDeviceList"});
+        };
 
-		function saveSettings() {
-			settings.primary = document.getElementById('primaryDevice').value;
-			settings.secondary = document.getElementById('secondaryDevice').value;
-			settings.direction = document.getElementById('input').checked ? 'input' : 'output';
-			settings.role = document.getElementById('defaultRole').checked ? 'default' : 'communication';
-			$SD.api.setSettings(uuid, settings);
-		}
-	</script>
+        function saveSettings() {
+            settings.primary = document.getElementById('primaryDevice').value;
+            settings.secondary = document.getElementById('secondaryDevice').value;
+            settings.direction = document.getElementById('input').checked ? 'input' : 'output';
+            settings.role = document.getElementById('defaultRole').checked ? 'default' : 'communication';
+            $SD.api.setSettings(uuid, settings);
+        }
+    </script>
 
 </body>
 
