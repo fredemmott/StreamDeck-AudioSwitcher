@@ -164,6 +164,29 @@
         primarySelector.appendChild(primaryOption);
         secondarySelector.appendChild(secondaryOption);
       });
+      if (primaryId && !primarySelector.querySelector(`option[value="${primaryId}"]`)) {
+          const opt = document.createElement("option");
+          opt.setAttribute("value", primaryId);
+          opt.setAttribute("selected", "selected");
+          opt.setAttribute("label", settings["primaryLabel"]);
+          primarySelector.appendChild(opt);
+          const cloned = opt.cloneNode();
+          if (primaryId != secondaryId) {
+            cloned.removeAttribute('selected');
+          }
+          secondarySelector.appendChild(cloned);
+      }
+	  if (secondaryId && primaryId != secondaryId && !secondarySelector.querySelector(`option[value="${secondaryId}"]`)) {
+		  const opt = document.createElement("option");
+		  opt.setAttribute("value", secondaryId);
+		  opt.setAttribute("selected", "selected");
+		  opt.setAttribute("label", settings["secondaryLabel"]);
+          secondarySelector.appendChild(opt);
+          const cloned = opt.cloneNode();
+          cloned.removeAttribute('selected');
+          primarySelector.appendChild(cloned);
+	  }
+
     }
 
     function updateDirection() {
@@ -194,7 +217,9 @@
 
     function saveSettings() {
       settings.primary = document.getElementById('primaryDevice').value;
+      settings.primaryLabel = document.querySelector(`#primaryDevice option[value="${settings.primary}"]`).label;
       settings.secondary = document.getElementById('secondaryDevice').value;
+      settings.secondaryLabel = document.querySelector(`#secondaryDevice option[value="${settings.secondary}"]`).label;
       settings.direction = document.getElementById('input').checked ? 'input' : 'output';
       settings.role = document.getElementById('defaultRole').checked ? 'default' : 'communication';
       $SD.api.setSettings(uuid, settings);
