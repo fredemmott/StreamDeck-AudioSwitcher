@@ -6,7 +6,7 @@ set(
   main.cpp
 )
 if(WIN32)
-  list(APPEND SOURCES AudioDevicesWindows.cpp)
+  list(APPEND SOURCES AudioDevicesWindows.cpp StringEncoding.cpp)
 endif()
 if(APPLE)
   list(APPEND SOURCES AudioDevicesMacOS.cpp)
