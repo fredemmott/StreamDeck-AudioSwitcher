@@ -16,9 +16,10 @@ LICENSE file.
 #include <mutex>
 #include <set>
 
-#include "AudioFunctions.h"
+#include "AudioDevices.h"
 
 using json = nlohmann::json;
+using namespace FredEmmott::Audio;
 
 class CallBackTimer;
 
@@ -89,5 +90,5 @@ class MyStreamDeckPlugin : public ESDBasePlugin {
   void UpdateState(const std::string& context, const std::string& device = "");
 
   std::map<std::string, Button> mButtons;
-  DEFAULT_AUDIO_DEVICE_CHANGE_CALLBACK_HANDLE mCallbackHandle;
+  std::unique_ptr<DefaultChangeCallbackHandle> mCallbackHandle;
 };

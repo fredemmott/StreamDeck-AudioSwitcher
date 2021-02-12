@@ -20,19 +20,22 @@ LICENSE file.
 #include <atomic>
 #include <mutex>
 
-#include "AudioFunctions.h"
+#include "AudioDevices.h"
+using namespace FredEmmott::Audio;
 
 namespace {
 const char* SET_ACTION_ID = "com.fredemmott.audiooutputswitch.set";
 const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
 }// namespace
 
-void to_json(json& j, const AudioDeviceInfo& device) {
-  j = json({{"id", device.id},
-            {"interfaceName", device.interfaceName},
-            {"endpointName", device.endpointName},
-            {"displayName", device.displayName},
-            {"state", device.state}});
+namespace FredEmmott::Audio {
+  void to_json(json& j, const AudioDeviceInfo& device) {
+    j = json({{"id", device.id},
+              {"interfaceName", device.interfaceName},
+              {"endpointName", device.endpointName},
+              {"displayName", device.displayName},
+              {"state", device.state}});
+  }
 }
 
 void to_json(json& j, const AudioDeviceState& state) {
@@ -53,16 +56,18 @@ void to_json(json& j, const AudioDeviceState& state) {
 }
 
 MyStreamDeckPlugin::MyStreamDeckPlugin() {
+#ifdef _MSC_VER
   CoInitialize(NULL);// initialize COM for the main thread
-  mCallbackHandle = AddDefaultAudioDeviceChangeCallback(std::bind(
+#endif
+  mCallbackHandle = std::move(AddDefaultAudioDeviceChangeCallback(std::bind(
     &MyStreamDeckPlugin::OnDefaultDeviceChanged, this, std::placeholders::_1,
-    std::placeholders::_2, std::placeholders::_3));
+    std::placeholders::_2, std::placeholders::_3)));
   ESDDebug("stored handle");
 }
 
 MyStreamDeckPlugin::~MyStreamDeckPlugin() {
   ESDDebug("plugin destructor");
-  RemoveDefaultAudioDeviceChangeCallback(mCallbackHandle);
+  mCallbackHandle.reset();
 }
 
 void MyStreamDeckPlugin::OnDefaultDeviceChanged(
