@@ -55,7 +55,7 @@ jobs:
           path: com.fredemmott.audiooutputswitch.streamDeckPlugin
     strategy:
       matrix:
-        os: [windows]
+        os: [windows, macos]
         build-type: [Release, Debug]
   release:
     needs: [build]
