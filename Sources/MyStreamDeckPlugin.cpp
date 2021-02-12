@@ -29,6 +29,23 @@ const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
 }// namespace
 
 namespace FredEmmott::Audio {
+  void to_json(json& j, const AudioDeviceState& state) {
+    switch (state) {
+      case AudioDeviceState::CONNECTED:
+        j = "connected";
+        return;
+      case AudioDeviceState::DEVICE_NOT_PRESENT:
+        j = "device_not_present";
+        return;
+      case AudioDeviceState::DEVICE_DISABLED:
+        j = "device_disabled";
+        return;
+      case AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION:
+        j = "device_present_no_connection";
+        return;
+    }
+  }
+
   void to_json(json& j, const AudioDeviceInfo& device) {
     j = json({{"id", device.id},
               {"interfaceName", device.interfaceName},
@@ -36,7 +53,7 @@ namespace FredEmmott::Audio {
               {"displayName", device.displayName},
               {"state", device.state}});
   }
-}
+} // namespace FredEmmott::Audio
 
 void to_json(json& j, const AudioDeviceState& state) {
   switch (state) {
