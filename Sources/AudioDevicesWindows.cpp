@@ -133,6 +133,10 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
     const auto id = Utf16ToUtf8(nativeID);
     CComPtr<IPropertyStore> properties;
     device->OpenPropertyStore(STGM_READ, &properties);
+    if (!properties) {
+      ESDDebug(L"Got a soundcard ({}) with inaccessible property store", nativeID);
+      continue;
+    }
     PROPVARIANT nativeCombinedName;
     properties->GetValue(PKEY_Device_FriendlyName, &nativeCombinedName);
     PROPVARIANT nativeInterfaceName;
