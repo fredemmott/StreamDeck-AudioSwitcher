@@ -43,6 +43,7 @@ message(STATUS "Install dir: ${CMAKE_INSTALL_PREFIX}")
 
 include_directories("${CMAKE_SOURCE_DIR}")
 
+include("AudioDeviceLib.cmake")
 include("StreamDeckSDK.cmake")
 include("sign_target.cmake")
 

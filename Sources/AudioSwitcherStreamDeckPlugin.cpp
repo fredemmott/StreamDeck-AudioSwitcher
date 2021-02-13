@@ -20,7 +20,7 @@ LICENSE file.
 #include <atomic>
 #include <mutex>
 
-#include "AudioDevices.h"
+#include <AudioDevices/AudioDevices.h>
 using namespace FredEmmott::Audio;
 
 namespace {

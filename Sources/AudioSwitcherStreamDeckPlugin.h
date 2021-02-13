@@ -16,7 +16,7 @@ LICENSE file.
 #include <mutex>
 #include <set>
 
-#include "AudioDevices.h"
+#include <AudioDevices/AudioDevices.h>
 
 using json = nlohmann::json;
 using namespace FredEmmott::Audio;
