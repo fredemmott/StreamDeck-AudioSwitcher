@@ -132,9 +132,9 @@ std::map<std::string, AudioDeviceInfo> GetAudioDeviceList(
     device->GetId(&nativeID);
     const auto id = Utf16ToUtf8(nativeID);
     CComPtr<IPropertyStore> properties;
-    device->OpenPropertyStore(STGM_READ, &properties);
+    const auto propStoreResult = device->OpenPropertyStore(STGM_READ, &properties);
     if (!properties) {
-      ESDDebug(L"Got a soundcard ({}) with inaccessible property store", nativeID);
+      ESDDebug(L"Got a soundcard ({}) with inaccessible property store - error {}", nativeID, propStoreResult);
       continue;
     }
     PROPVARIANT nativeCombinedName;
