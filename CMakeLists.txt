@@ -13,11 +13,32 @@ project(
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_CXX_EXTENSIONS false)
-if (MSVC)
-  add_definitions("/Zc:__cplusplus -DUNICODE=1")
+if(WIN32)
+  add_compile_definitions(
+    "UNICODE=1"
+    "_UNICODE=1"
+    "WIN32_LEAN_AND_MEAN=1"
+    "WINVER=0xa00" # Windows 10
+    "_WIN32_WINNT=0xa00"
+  )
 endif()
+if (MSVC)
+  add_compile_options(
+    "/diagnostics:caret" # more detailed error messages
+    "/EHsc" # standard-compliant exception handling
+    "/Zc:__cplusplus" # standard-compliant __cplusplus macro
+    "/await:strict" # standard--compliant coroutines
+  )
 
-include_directories("${CMAKE_SOURCE_DIR}")
+  # Statically link the MSVC runtime
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+  # ... but dynamically link the UCRT - the ABI-stable part
+  add_link_options(
+    "/DEFAULTLIB:ucrt$<$<CONFIG:Debug>:d>.lib"
+    "/NODEFAULTLIB:libucrt$<$<CONFIG:Debug>:d>.lib"
+  )
+endif()
 
 include("AudioDeviceLib.cmake")
 include("StreamDeckSDK.cmake")

@@ -21,6 +21,11 @@ LICENSE file.
 #include <mutex>
 
 #include <AudioDevices/AudioDevices.h>
+
+#ifdef _MSC_VER
+#include <objbase.h>
+#endif
+
 using namespace FredEmmott::Audio;
 
 namespace {
@@ -74,7 +79,7 @@ void to_json(json& j, const AudioDeviceState& state) {
 
 AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
 #ifdef _MSC_VER
-  CoInitialize(NULL);// initialize COM for the main thread
+  CoInitializeEx(NULL, COINIT_MULTITHREADED);// initialize COM for the main thread
 #endif
   mCallbackHandle = std::move(AddDefaultAudioDeviceChangeCallback(std::bind(
     &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged, this, std::placeholders::_1,
