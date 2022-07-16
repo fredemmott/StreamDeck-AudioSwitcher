@@ -17,35 +17,13 @@ if (MSVC)
   add_definitions("/Zc:__cplusplus -DUNICODE=1")
 endif()
 
-if (APPLE)
-  set(
-    STREAMDECK_PLUGIN_DIR
-    "$ENV{HOME}/Library/ApplicationSupport/com.elgato.StreamDeck/Plugins"
-  )
-elseif (WIN32)
-  STRING(
-    REPLACE
-    "\\"
-    "/"
-    STREAMDECK_PLUGIN_DIR
-    "$ENV{appdata}/Elgato/StreamDeck/Plugins"
-  )
-endif()
-message(STATUS "StreamDeck plugin dir: ${STREAMDECK_PLUGIN_DIR}")
-if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(
-    CMAKE_INSTALL_PREFIX
-    "${STREAMDECK_PLUGIN_DIR}/${CMAKE_PROJECT_NAME}"
-    CACHE PATH "..." FORCE
-  )
-endif()
-message(STATUS "Install dir: ${CMAKE_INSTALL_PREFIX}")
-
 include_directories("${CMAKE_SOURCE_DIR}")
 
 include("AudioDeviceLib.cmake")
 include("StreamDeckSDK.cmake")
 include("sign_target.cmake")
+
+set_default_install_dir_to_streamdeck_plugin_dir()
 
 add_subdirectory(Sources)
 add_subdirectory(sdPlugin)
