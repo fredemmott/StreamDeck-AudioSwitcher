@@ -19,11 +19,16 @@ jobs:
         working-directory: build
         shell: pwsh
         run: |
-          cmake ${{github.workspace}}/source `
-            "-DSIGNTOOL_KEY_ARGS=/f;${{runner.temp}}/MyCert.pfx" `
-            -DCMAKE_BUILD_TYPE=${{matrix.build-type}} `
-            -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} `
+          $args = @(
+            "-DSIGNTOOL_KEY_ARGS=/f;${{runner.temp}}/MyCert.pfx"
+            "-DCMAKE_BUILD_TYPE=${{matrix.build-type}}"
+            "-DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}}"
             "-DCMAKE_INSTALL_PREFIX=${{github.workspace}}/com.fredemmott.audiooutputswitch.sdPlugin"
+          )
+          if ( "${{matrix.os}}" -eq "windows" ) {
+            $args += "-DCMAKE_SYSTEM_VERSION=10.0.22621.0"
+          }
+          cmake ${{github.workspace}}/source @args
       - name: Compile
         working-directory: build
         run: cmake --build . --config ${{matrix.build-type}} --parallel
