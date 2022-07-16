@@ -36,19 +36,19 @@ jobs:
         working-directory: build
         run: cmake --install . --config ${{matrix.build-type}}
       - name: Upload MacOS Executable
-        if: matrix.os == 'macos'
+        if: matrix.os == 'macos' && matrix.build-type != 'Debug'
         uses: actions/upload-artifact@v2
         with:
           name: MacOS-${{matrix.arch}}-${{matrix.build-type}}
           path: build/Sources/sdaudioswitch
       - name: Upload Windows Executable
-        if: matrix.os == 'windows'
+        if: matrix.os == 'windows' && matrix.build-type != 'Debug'
         uses: actions/upload-artifact@v2
         with:
           name: Windows-${{matrix.build-type}}
           path: build/Sources/${{matrix.build-type}}/sdaudioswitch.exe
       - name: Upload Windows Debug Symbols
-        if: matrix.os == 'windows' && matrix.build_type != 'Release'
+        if: matrix.os == 'windows' && matrix.build-type != 'Release' && matrix.build-type != 'Debug'
         uses: actions/upload-artifact@v2
         with:
           name: Windows-${{matrix.build-type}}
@@ -125,7 +125,7 @@ jobs:
           path: com.fredemmott.audiooutputswitch.streamDeckPlugin
     strategy:
       matrix:
-        build-type: [RelWithDebInfo, Debug]
+        build-type: [RelWithDebInfo]
   release:
     needs: [streamDeckPlugin]
     runs-on: ubuntu-latest
@@ -164,14 +164,4 @@ jobs:
         upload_url: ${{ steps.create-release.outputs.upload_url }}
         asset_path: ${{runner.temp}}/artifacts/RelWithDebInfo-StreamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
         asset_name: com.fredemmott.audiooutputswitch.streamDeckPlugin
-        asset_content_type: application/octet-stream
-    - name: Attach Debug Build
-      if: steps.ref.outputs.is-release == 'true'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: ${{runner.temp}}/artifacts/Debug-StreamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
-        asset_name: debug-com.fredemmott.audiooutputswitch.streamDeckPlugin
         asset_content_type: application/octet-stream
