@@ -84,7 +84,7 @@ AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
 
 AudioSwitcherStreamDeckPlugin::~AudioSwitcherStreamDeckPlugin() {
   ESDDebug("plugin destructor");
-  mCallbackHandle.reset();
+  mCallbackHandle = {};
 }
 
 void AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged(

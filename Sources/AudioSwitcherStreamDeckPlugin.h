@@ -90,5 +90,5 @@ class AudioSwitcherStreamDeckPlugin : public ESDBasePlugin {
   void UpdateState(const std::string& context, const std::string& device = "");
 
   std::map<std::string, Button> mButtons;
-  std::unique_ptr<DefaultChangeCallbackHandle> mCallbackHandle;
+  DefaultChangeCallbackHandle mCallbackHandle;
 };
