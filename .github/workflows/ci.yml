@@ -103,12 +103,6 @@ jobs:
           install -m755 \
             artifacts/Windows-${{matrix.build-type}}/sdaudioswitch.exe \
             com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch.exe
-          PDB_SRC=artifacts/Windows-${{matrix.build-type}}/sdaudioswitch.pdb
-          if [ -e $PDB_SRC ]; then
-            install -m755 \
-              ${PDB_SRC} \
-              com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch.pdb
-          fi
       - name: Checkout DistributionTool
         uses: actions/checkout@v2
         with:
@@ -164,4 +158,14 @@ jobs:
         upload_url: ${{ steps.create-release.outputs.upload_url }}
         asset_path: ${{runner.temp}}/artifacts/RelWithDebInfo-StreamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
         asset_name: com.fredemmott.audiooutputswitch.streamDeckPlugin
+        asset_content_type: application/octet-stream
+    - name: Attach PDB Files
+      if: steps.ref.outputs.is-release == 'true'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create-release.outputs.upload_url }}
+        asset_path: ${{runner.temp}}/artifacts/DebugSymbols-windows-RelWithDebInfo/sdaudioswitch.pdb
+        asset_name: sdaudioswitch.pdb
         asset_content_type: application/octet-stream
