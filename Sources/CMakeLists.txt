@@ -5,6 +5,16 @@ set(
   AudioSwitcherStreamDeckPlugin.cpp
   main.cpp
 )
+
+if(WIN32)
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/version.rc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/version.rc"
+    @ONLY
+  )
+  list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
+endif()
+
 add_executable(
   sdaudioswitch
   ${SOURCES}
