@@ -4,10 +4,18 @@ cmake_minimum_required(VERSION 3.15)
 cmake_policy(SET CMP0091 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
+if(DEFINED ENV{GITHUB_RUN_NUMBER})
+  set(DEFAULT_VERSION_BUILD $ENV{GITHUB_RUN_NUMBER})
+else()
+  set(DEFAULT_VERSION_BUILD 0)
+endif()
+
+set(VERSION_BUILD "${DEFAULT_VERSION_BUILD}" CACHE STRING "patch component of version number")
+
 project(
   com.fredemmott.audiooutputswitch.sdPlugin
   LANGUAGES CXX
-  VERSION 3.0
+  VERSION 3.1.0.${VERSION_BUILD}
 )
 
 set(CMAKE_CXX_STANDARD 20)
