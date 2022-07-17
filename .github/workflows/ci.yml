@@ -51,7 +51,7 @@ jobs:
         if: matrix.os == 'windows' && matrix.build-type != 'Release' && matrix.build-type != 'Debug'
         uses: actions/upload-artifact@v2
         with:
-          name: Windows-${{matrix.build-type}}
+          name: DebugSymbols-Windows-${{matrix.build-type}}
           path: build/Sources/${{matrix.build-type}}/sdaudioswitch.pdb
     strategy:
       matrix:
@@ -166,6 +166,6 @@ jobs:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: ${{runner.temp}}/artifacts/DebugSymbols-windows-RelWithDebInfo/sdaudioswitch.pdb
+        asset_path: ${{runner.temp}}/artifacts/DebugSymbols-Windows-RelWithDebInfo/sdaudioswitch.pdb
         asset_name: sdaudioswitch.pdb
         asset_content_type: application/octet-stream
