@@ -2,8 +2,8 @@ include(FetchContent)
 
 FetchContent_Declare(
   AudioDeviceLib
-  URL https://github.com/fredemmott/AudioDeviceLib/releases/download/v2.0.0/AudioDeviceLib-v2.0.0.zip
-  URL_HASH SHA512=10ac9f13c4238d8407fffa44b310cb049090251b6acb5170b38a4122926fd5b209aab7c7528a23497d409c17c770037b15bd00953b223e2c3b7403dd6583a495
+  URL https://github.com/fredemmott/AudioDeviceLib/releases/download/v2.1.0/AudioDeviceLib-v2.1.0.zip
+  URL_HASH SHA512=ecd4be984caaee11af199c6d5eb02986c53908ce8ee60ebb83ce193182a94109f28742335f6d734110d583dd0e5c7f01a9a9fa54f615d9f3e351163c2ad7dce5
 )
 
 FetchContent_GetProperties(AudioDeviceLib)
