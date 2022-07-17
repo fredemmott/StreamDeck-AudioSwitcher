@@ -16,6 +16,8 @@ LICENSE file.
 #include <mutex>
 #include <set>
 
+#include "ButtonSettings.h"
+
 using json = nlohmann::json;
 using namespace FredEmmott::Audio;
 
@@ -66,12 +68,6 @@ class AudioSwitcherStreamDeckPlugin : public ESDBasePlugin {
     const std::string& inDeviceID) override;
 
  private:
-  struct ButtonSettings {
-    AudioDeviceDirection direction = AudioDeviceDirection::INPUT;
-    AudioDeviceRole role = AudioDeviceRole::DEFAULT;
-    AudioDeviceInfo primaryDevice;
-    AudioDeviceInfo secondaryDevice;
-  };
   struct Button {
     std::string action;
     std::string context;
@@ -84,7 +80,6 @@ class AudioSwitcherStreamDeckPlugin : public ESDBasePlugin {
   std::map<std::string, Button> mButtons;
   DefaultChangeCallbackHandle mCallbackHandle;
 
-  static ButtonSettings ButtonSettingsFromJSON(const json& payload);
   void OnDefaultDeviceChanged(
     AudioDeviceDirection direction,
     AudioDeviceRole role,

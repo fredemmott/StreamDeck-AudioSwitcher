@@ -84,8 +84,11 @@ void AudioSwitcherStreamDeckPlugin::KeyUpForAction(
   ESDDebug("{}: {}", __FUNCTION__, inPayload.dump());
   std::scoped_lock lock(mVisibleContextsMutex);
 
-  const auto settings = ButtonSettingsFromJSON(inPayload);
-  mButtons[inContext].settings = settings;
+  if (!inPayload.contains("settings")) {
+    return;
+  }
+  auto& settings = mButtons[inContext].settings;
+  settings = inPayload.at("settings");
   const auto state = EPLJSONUtils::GetIntByName(inPayload, "state");
   // this looks inverted - but if state is 0, we want to move to state 1, so
   // we want the secondary devices. if state is 1, we want state 0, so we want
@@ -129,8 +132,13 @@ void AudioSwitcherStreamDeckPlugin::WillAppearForAction(
   std::scoped_lock lock(mVisibleContextsMutex);
   // Remember the context
   mVisibleContexts.insert(inContext);
-  const auto settings = ButtonSettingsFromJSON(inPayload);
-  mButtons[inContext] = {inAction, inContext, settings};
+  auto& button = mButtons[inContext];
+  button = {inAction, inContext};
+
+  if (!inPayload.contains("settings")) {
+    return;
+  }
+  button.settings = inPayload.at("settings");
   UpdateState(inContext);
 }
 
@@ -167,54 +175,6 @@ void AudioSwitcherStreamDeckPlugin::SendToPlugin(
       }));
     return;
   }
-}
-
-AudioSwitcherStreamDeckPlugin::ButtonSettings
-AudioSwitcherStreamDeckPlugin::ButtonSettingsFromJSON(const json& inPayload) {
-  if (!inPayload.contains("settings")) {
-    return {};
-  }
-  const auto jsonSettings = inPayload.at("settings");
-
-  if (!jsonSettings.contains("direction")) {
-    return {};
-  }
-
-  ButtonSettings settings;
-
-  if (jsonSettings.contains("direction")) {
-    settings.direction
-      = (jsonSettings.at("direction").get<std::string>() == "output")
-          ? AudioDeviceDirection::OUTPUT
-          : AudioDeviceDirection::INPUT;
-  }
-
-  if (jsonSettings.contains("role")) {
-    settings.role
-      = (jsonSettings.at("role").get<std::string>() == "communication")
-          ? AudioDeviceRole::COMMUNICATION
-          : AudioDeviceRole::DEFAULT;
-  }
-
-  if (jsonSettings.contains("primary")) {
-    const auto& primary = jsonSettings.at("primary");
-    if (primary.is_string()) {
-      settings.primaryDevice.id = primary;
-    } else {
-      settings.primaryDevice = primary;
-    }
-  }
-
-  if (jsonSettings.contains("secondary")) {
-    const auto& secondary = jsonSettings.at("secondary");
-    if (secondary.is_string()) {
-      settings.secondaryDevice.id = secondary;
-    } else {
-      settings.secondaryDevice = secondary;
-    }
-  }
-
-  return settings;
 }
 
 void AudioSwitcherStreamDeckPlugin::UpdateState(

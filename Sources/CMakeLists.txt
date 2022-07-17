@@ -2,8 +2,9 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(
   SOURCES
-  AudioSwitcherStreamDeckPlugin.cpp
   audio_json.cpp
+  AudioSwitcherStreamDeckPlugin.cpp
+  ButtonSettings.cpp
   main.cpp
 )
 
