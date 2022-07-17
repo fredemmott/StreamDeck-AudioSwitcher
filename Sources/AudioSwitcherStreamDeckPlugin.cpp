@@ -32,8 +32,10 @@ using namespace FredEmmott::Audio;
 using json = nlohmann::json;
 
 namespace {
-const char* SET_ACTION_ID = "com.fredemmott.audiooutputswitch.set";
-const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
+constexpr std::string_view SET_ACTION_ID{
+  "com.fredemmott.audiooutputswitch.set"};
+constexpr std::string_view TOGGLE_ACTION_ID{
+  "com.fredemmott.audiooutputswitch.toggle"};
 }// namespace
 
 AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
