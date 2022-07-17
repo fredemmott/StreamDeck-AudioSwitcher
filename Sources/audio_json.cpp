@@ -65,4 +65,36 @@ void from_json(const nlohmann::json& j, AudioDeviceInfo& device) {
   };
 }
 
+void from_json(const nlohmann::json& j, AudioDeviceDirection& d) {
+  d = (j == "output") ? AudioDeviceDirection::OUTPUT
+                      : AudioDeviceDirection::INPUT;
+}
+
+void to_json(nlohmann::json& j, const AudioDeviceDirection& d) {
+  switch (d) {
+    case AudioDeviceDirection::OUTPUT:
+      j = "output";
+      return;
+    case AudioDeviceDirection::INPUT:
+      j = "input";
+      return;
+  }
+}
+
+void from_json(const nlohmann::json& j, AudioDeviceRole& r) {
+  r = (j == "communication") ? AudioDeviceRole::COMMUNICATION
+                             : AudioDeviceRole::DEFAULT;
+}
+
+void to_json(nlohmann::json& j, const AudioDeviceRole& r) {
+  switch (r) {
+    case AudioDeviceRole::COMMUNICATION:
+      j = "communication";
+      return;
+    case AudioDeviceRole::DEFAULT:
+      j = "default";
+      return;
+  }
+}
+
 }// namespace FredEmmott::Audio

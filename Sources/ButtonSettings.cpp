@@ -13,14 +13,10 @@ void from_json(const nlohmann::json& j, ButtonSettings& bs) {
     return;
   }
 
-  bs.direction = (j.at("direction").get<std::string>() == "output")
-                   ? AudioDeviceDirection::OUTPUT
-                   : AudioDeviceDirection::INPUT;
+  bs.direction = j.at("direction");
 
   if (j.contains("role")) {
-    bs.role = (j.at("role").get<std::string>() == "communication")
-                ? AudioDeviceRole::COMMUNICATION
-                : AudioDeviceRole::DEFAULT;
+    bs.role = j.at("role");
   }
 
   if (j.contains("primary")) {
@@ -42,6 +38,6 @@ void from_json(const nlohmann::json& j, ButtonSettings& bs) {
   }
 }
 
-void to_json(nlohmann::json&, const ButtonSettings&) {
+void to_json(nlohmann::json& js, const ButtonSettings& bs) {
   throw std::logic_error("Unimplemented");
 }

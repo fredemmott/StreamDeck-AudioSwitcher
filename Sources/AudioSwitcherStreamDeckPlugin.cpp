@@ -36,6 +36,23 @@ constexpr std::string_view SET_ACTION_ID{
   "com.fredemmott.audiooutputswitch.set"};
 constexpr std::string_view TOGGLE_ACTION_ID{
   "com.fredemmott.audiooutputswitch.toggle"};
+
+bool FillAudioDeviceInfo(AudioDeviceInfo& di) {
+  if (di.id.empty()) {
+    return false;
+  }
+  if (!di.displayName.empty()) {
+    return false;
+  }
+
+  const auto devices = GetAudioDeviceList(di.direction);
+  if (!devices.contains(di.id)) {
+    return false;
+  }
+  di = devices.at(di.id);
+  return true;
+}
+
 }// namespace
 
 AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
@@ -139,7 +156,15 @@ void AudioSwitcherStreamDeckPlugin::WillAppearForAction(
     return;
   }
   button.settings = inPayload.at("settings");
+
   UpdateState(inContext);
+  const auto filledPrimary = FillAudioDeviceInfo(button.settings.primaryDevice);
+
+  const auto filledSecondary
+    = FillAudioDeviceInfo(button.settings.secondaryDevice);
+  if (filledPrimary || filledSecondary) {
+    mConnectionManager->SetSettings(button.settings, inContext);
+  }
 }
 
 void AudioSwitcherStreamDeckPlugin::WillDisappearForAction(
