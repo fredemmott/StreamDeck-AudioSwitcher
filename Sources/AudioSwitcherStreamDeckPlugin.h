@@ -11,12 +11,11 @@ LICENSE file.
 **/
 //==============================================================================
 
+#include <AudioDevices/AudioDevices.h>
 #include <StreamDeckSDK/ESDBasePlugin.h>
 
 #include <mutex>
 #include <set>
-
-#include <AudioDevices/AudioDevices.h>
 
 using json = nlohmann::json;
 using namespace FredEmmott::Audio;

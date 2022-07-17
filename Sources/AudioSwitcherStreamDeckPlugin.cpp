@@ -13,14 +13,13 @@ LICENSE file.
 
 #include "AudioSwitcherStreamDeckPlugin.h"
 
+#include <AudioDevices/AudioDevices.h>
 #include <StreamDeckSDK/EPLJSONUtils.h>
 #include <StreamDeckSDK/ESDConnectionManager.h>
 #include <StreamDeckSDK/ESDLogger.h>
 
 #include <atomic>
 #include <mutex>
-
-#include <AudioDevices/AudioDevices.h>
 
 #ifdef _MSC_VER
 #include <objbase.h>
@@ -34,31 +33,32 @@ const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
 }// namespace
 
 namespace FredEmmott::Audio {
-  void to_json(json& j, const AudioDeviceState& state) {
-    switch (state) {
-      case AudioDeviceState::CONNECTED:
-        j = "connected";
-        return;
-      case AudioDeviceState::DEVICE_NOT_PRESENT:
-        j = "device_not_present";
-        return;
-      case AudioDeviceState::DEVICE_DISABLED:
-        j = "device_disabled";
-        return;
-      case AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION:
-        j = "device_present_no_connection";
-        return;
-    }
+void to_json(json& j, const AudioDeviceState& state) {
+  switch (state) {
+    case AudioDeviceState::CONNECTED:
+      j = "connected";
+      return;
+    case AudioDeviceState::DEVICE_NOT_PRESENT:
+      j = "device_not_present";
+      return;
+    case AudioDeviceState::DEVICE_DISABLED:
+      j = "device_disabled";
+      return;
+    case AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION:
+      j = "device_present_no_connection";
+      return;
   }
+}
 
-  void to_json(json& j, const AudioDeviceInfo& device) {
-    j = json({{"id", device.id},
-              {"interfaceName", device.interfaceName},
-              {"endpointName", device.endpointName},
-              {"displayName", device.displayName},
-              {"state", device.state}});
-  }
-} // namespace FredEmmott::Audio
+void to_json(json& j, const AudioDeviceInfo& device) {
+  j = json(
+    {{"id", device.id},
+     {"interfaceName", device.interfaceName},
+     {"endpointName", device.endpointName},
+     {"displayName", device.displayName},
+     {"state", device.state}});
+}
+}// namespace FredEmmott::Audio
 
 void to_json(json& j, const AudioDeviceState& state) {
   switch (state) {
@@ -79,11 +79,12 @@ void to_json(json& j, const AudioDeviceState& state) {
 
 AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
 #ifdef _MSC_VER
-  CoInitializeEx(NULL, COINIT_MULTITHREADED);// initialize COM for the main thread
+  CoInitializeEx(
+    NULL, COINIT_MULTITHREADED);// initialize COM for the main thread
 #endif
   mCallbackHandle = std::move(AddDefaultAudioDeviceChangeCallback(std::bind(
-    &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged, this, std::placeholders::_1,
-    std::placeholders::_2, std::placeholders::_3)));
+    &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged, this,
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)));
   ESDDebug("stored handle");
 }
 
@@ -199,15 +200,17 @@ void AudioSwitcherStreamDeckPlugin::SendToPlugin(
     const auto inputList = GetAudioDeviceList(AudioDeviceDirection::INPUT);
     mConnectionManager->SendToPropertyInspector(
       inAction, inContext,
-      json({{"event", event},
-            {"outputDevices", outputList},
-            {"inputDevices", inputList}}));
+      json({
+        {"event", event},
+        {"outputDevices", outputList},
+        {"inputDevices", inputList},
+      }));
     return;
   }
 }
 
-AudioSwitcherStreamDeckPlugin::ButtonSettings AudioSwitcherStreamDeckPlugin::ButtonSettingsFromJSON(
-  const json& inPayload) {
+AudioSwitcherStreamDeckPlugin::ButtonSettings
+AudioSwitcherStreamDeckPlugin::ButtonSettingsFromJSON(const json& inPayload) {
   ButtonSettings settings;
   json jsonSettings;
   EPLJSONUtils::GetObjectByName(inPayload, "settings", jsonSettings);
@@ -238,8 +241,8 @@ void AudioSwitcherStreamDeckPlugin::UpdateState(
         ? GetDefaultAudioDeviceID(settings.direction, settings.role)
         : optionalDefaultDevice;
   ESDDebug(
-    "setting active ID {} {} {}", activeDevice,
-    settings.primaryDevice, settings.secondaryDevice);
+    "setting active ID {} {} {}", activeDevice, settings.primaryDevice,
+    settings.secondaryDevice);
 
   std::scoped_lock lock(mVisibleContextsMutex);
   if (action == SET_ACTION_ID) {
@@ -263,11 +266,13 @@ void AudioSwitcherStreamDeckPlugin::DeviceDidConnect(
   // Nothing to do
 }
 
-void AudioSwitcherStreamDeckPlugin::DeviceDidDisconnect(const std::string& inDeviceID) {
+void AudioSwitcherStreamDeckPlugin::DeviceDidDisconnect(
+  const std::string& inDeviceID) {
   // Nothing to do
 }
 
-void AudioSwitcherStreamDeckPlugin::DidReceiveGlobalSettings(const json& inPayload) {
+void AudioSwitcherStreamDeckPlugin::DidReceiveGlobalSettings(
+  const json& inPayload) {
 }
 
 void AudioSwitcherStreamDeckPlugin::DidReceiveSettings(
