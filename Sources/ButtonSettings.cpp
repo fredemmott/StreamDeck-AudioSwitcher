@@ -38,6 +38,11 @@ void from_json(const nlohmann::json& j, ButtonSettings& bs) {
   }
 }
 
-void to_json(nlohmann::json& js, const ButtonSettings& bs) {
-  throw std::logic_error("Unimplemented");
+void to_json(nlohmann::json& j, const ButtonSettings& bs) {
+  j = {
+    {"direction", bs.direction},
+    {"role", bs.role},
+    {"primary", bs.primaryDevice},
+    {"secondary", bs.secondaryDevice},
+  };
 }

@@ -106,6 +106,8 @@ void AudioSwitcherStreamDeckPlugin::KeyUpForAction(
   }
   auto& settings = mButtons[inContext].settings;
   settings = inPayload.at("settings");
+  FillButtonDeviceInfo(inContext);
+
   const auto state = EPLJSONUtils::GetIntByName(inPayload, "state");
   // this looks inverted - but if state is 0, we want to move to state 1, so
   // we want the secondary devices. if state is 1, we want state 0, so we want
@@ -158,12 +160,18 @@ void AudioSwitcherStreamDeckPlugin::WillAppearForAction(
   button.settings = inPayload.at("settings");
 
   UpdateState(inContext);
-  const auto filledPrimary = FillAudioDeviceInfo(button.settings.primaryDevice);
+  FillButtonDeviceInfo(inContext);
+}
 
-  const auto filledSecondary
-    = FillAudioDeviceInfo(button.settings.secondaryDevice);
+void AudioSwitcherStreamDeckPlugin::FillButtonDeviceInfo(
+  const std::string& context) {
+  auto& settings = mButtons.at(context).settings;
+
+  const auto filledPrimary = FillAudioDeviceInfo(settings.primaryDevice);
+  const auto filledSecondary = FillAudioDeviceInfo(settings.secondaryDevice);
   if (filledPrimary || filledSecondary) {
-    mConnectionManager->SetSettings(button.settings, inContext);
+    ESDDebug("Backfilling settings to {}", json(settings).dump());
+    mConnectionManager->SetSettings(settings, context);
   }
 }
 

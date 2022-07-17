@@ -85,4 +85,5 @@ class AudioSwitcherStreamDeckPlugin : public ESDBasePlugin {
     AudioDeviceRole role,
     const std::string& activeAudioDeviceID);
   void UpdateState(const std::string& context, const std::string& device = "");
+  void FillButtonDeviceInfo(const std::string& context);
 };
