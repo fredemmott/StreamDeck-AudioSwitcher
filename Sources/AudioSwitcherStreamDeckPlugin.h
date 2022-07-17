@@ -2,9 +2,8 @@
 /**
 @file       AudioSwitcherStreamDeckPlugin.h
 
-@brief      CPU plugin
-
 @copyright  (c) 2018, Corsair Memory, Inc.
+@copyright  (c) 2018-present, Fred Emmott.
       This source code is licensed under the MIT-style license found in the
 LICENSE file.
 

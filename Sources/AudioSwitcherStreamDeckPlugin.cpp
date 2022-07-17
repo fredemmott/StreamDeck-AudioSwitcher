@@ -5,6 +5,7 @@
 @brief      CPU plugin
 
 @copyright  (c) 2018, Corsair Memory, Inc.
+@copyright  (c) 2018-present, Fred Emmott.
       This source code is licensed under the MIT-style license found in the
 LICENSE file.
 
@@ -25,87 +26,15 @@ LICENSE file.
 #include <objbase.h>
 #endif
 
+#include "audio_json.h"
+
 using namespace FredEmmott::Audio;
+using json = nlohmann::json;
 
 namespace {
 const char* SET_ACTION_ID = "com.fredemmott.audiooutputswitch.set";
 const char* TOGGLE_ACTION_ID = "com.fredemmott.audiooutputswitch.toggle";
 }// namespace
-
-namespace FredEmmott::Audio {
-void to_json(json& j, const AudioDeviceState& state) {
-  switch (state) {
-    case AudioDeviceState::CONNECTED:
-      j = "connected";
-      return;
-    case AudioDeviceState::DEVICE_NOT_PRESENT:
-      j = "device_not_present";
-      return;
-    case AudioDeviceState::DEVICE_DISABLED:
-      j = "device_disabled";
-      return;
-    case AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION:
-      j = "device_present_no_connection";
-      return;
-  }
-}
-
-void from_json(const json& j, AudioDeviceState& state) {
-  if (j == "connected") {
-    state = AudioDeviceState::CONNECTED;
-    return;
-  }
-  if (j == "device_not_present") {
-    state = AudioDeviceState::DEVICE_NOT_PRESENT;
-    return;
-  }
-  if (j == "device_disabled") {
-    state = AudioDeviceState::DEVICE_DISABLED;
-    return;
-  }
-  if (j == "device_present_no_connection") {
-    state == AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION;
-    return;
-  }
-}
-
-void to_json(json& j, const AudioDeviceInfo& device) {
-  j = json(
-    {{"id", device.id},
-     {"interfaceName", device.interfaceName},
-     {"endpointName", device.endpointName},
-     {"displayName", device.displayName},
-     {"state", device.state}});
-}
-
-void from_json(const json& j, AudioDeviceInfo& device) {
-  device = {
-    .id = j.at("id"),
-    .interfaceName = j.at("interfaceName"),
-    .endpointName = j.at("endpointName"),
-    .displayName = j.at("displayName"),
-    .state = j.at("state"),
-  };
-}
-
-}// namespace FredEmmott::Audio
-
-void to_json(json& j, const AudioDeviceState& state) {
-  switch (state) {
-    case AudioDeviceState::CONNECTED:
-      j = "connected";
-      return;
-    case AudioDeviceState::DEVICE_NOT_PRESENT:
-      j = "device_not_present";
-      return;
-    case AudioDeviceState::DEVICE_DISABLED:
-      j = "device_disabled";
-      return;
-    case AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION:
-      j = "device_present_no_connection";
-      return;
-  }
-}
 
 AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
 #ifdef _MSC_VER
