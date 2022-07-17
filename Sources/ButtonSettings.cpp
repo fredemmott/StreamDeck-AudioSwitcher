@@ -82,7 +82,8 @@ std::string GetVolatileID(
       device.interfaceName == other.interfaceName
       && device.endpointName == other.endpointName) {
       ESDDebug(
-        "Fuzzy device match for {}/{}" device.interfaceName,
+        "Fuzzy device match for {}/{}",
+        device.interfaceName,
         device.endpointName);
       return otherID;
     }
