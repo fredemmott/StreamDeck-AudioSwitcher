@@ -22,6 +22,18 @@ Download the `com.fredemmott.audiooutputswitch.streamDeckPlugin` file from [the 
 This uses undocumented and unsupported Windows APIs. These have apparently worked since Windows 7, but they
 might stop working at any time or have unexpected side effects.
 
+# Getting Help
+
+I make this for my own use, and I share this in the hope others find it useful; I'm not able to commit to support, bug fixes, or feature development.
+
+If you have found a bug, first check [the troubleshooting guide](TROUBLESHOOTING.md) guide; if that doesn't resolve the issue or you have a feature request, please check [GitHub issues](https://github.com/fredemmott/StreamDeck-AudioSwitcher/issues) to see if it has already been reported, and [create a new issue](https://github.com/fredemmott/StreamDeck-AudioSwitcher/issues/new) if not.
+
+Support may be available from the community via:
+* [GitHub Discussions](https://github.com/fredemmott/StreamDeck-AudioSwitcher/discussions)
+* [Discord](https://discord.gg/CWrvKfuff3)
+
+I am not able to respond to 1:1 requests for help via any means, including GitHub, Discord, Twitter, Reddit, or email.
+
 # Thanks
 
 - Thanks to "EreTIk" for finding/documenting the COM interface.
