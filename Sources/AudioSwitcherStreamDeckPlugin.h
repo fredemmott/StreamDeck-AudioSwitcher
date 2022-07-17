@@ -67,27 +67,28 @@ class AudioSwitcherStreamDeckPlugin : public ESDBasePlugin {
     const std::string& inDeviceID) override;
 
  private:
-  std::recursive_mutex mVisibleContextsMutex;
-  std::set<std::string> mVisibleContexts;
-
   struct ButtonSettings {
-    AudioDeviceDirection direction;
-    AudioDeviceRole role;
-    std::string primaryDevice;
-    std::string secondaryDevice;
+    AudioDeviceDirection direction = AudioDeviceDirection::INPUT;
+    AudioDeviceRole role = AudioDeviceRole::DEFAULT;
+    AudioDeviceInfo primaryDevice;
+    AudioDeviceInfo secondaryDevice;
   };
   struct Button {
     std::string action;
     std::string context;
     ButtonSettings settings;
   };
+
+  std::recursive_mutex mVisibleContextsMutex;
+  std::set<std::string> mVisibleContexts;
+
+  std::map<std::string, Button> mButtons;
+  DefaultChangeCallbackHandle mCallbackHandle;
+
   static ButtonSettings ButtonSettingsFromJSON(const json& payload);
   void OnDefaultDeviceChanged(
     AudioDeviceDirection direction,
     AudioDeviceRole role,
     const std::string& activeAudioDeviceID);
   void UpdateState(const std::string& context, const std::string& device = "");
-
-  std::map<std::string, Button> mButtons;
-  DefaultChangeCallbackHandle mCallbackHandle;
 };

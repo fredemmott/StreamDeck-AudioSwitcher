@@ -9,6 +9,7 @@
     .platform-mac .windows-only {
       display: none;
     }
+
   </style>
 </head>
 
@@ -98,8 +99,11 @@
     function updateDeviceLists(devices) {
       const primarySelector = document.getElementById('primaryDevice');
       const secondarySelector = document.getElementById('secondaryDevice');
-      const primaryId = settings['primary'];
-      const secondaryId = settings['secondary'];
+
+      const primary = settings['primary'];
+      const primaryId = (typeof primary == 'object') ? primary.id : settings['primary'];
+      const secondary = settings['secondary'];
+      const secondaryId = (typeof secondary == 'object') ? secondary.id : settings['secondary'];
 
       const state_sort = {
         "connected": 0,
@@ -113,7 +117,7 @@
         secondarySelector.removeChild(secondarySelector.firstChild);
       }
 
-      const sortedIds= Object.keys(devices).sort((a_id, b_id) => {
+      const sortedIds = Object.keys(devices).sort((a_id, b_id) => {
         const a = devices[a_id];
         const b = devices[b_id];
 
@@ -165,27 +169,27 @@
         secondarySelector.appendChild(secondaryOption);
       });
       if (primaryId && !primarySelector.querySelector(`option[value="${primaryId}"]`)) {
-          const opt = document.createElement("option");
-          opt.setAttribute("value", primaryId);
-          opt.setAttribute("selected", "selected");
-          opt.setAttribute("label", settings["primaryLabel"]);
-          primarySelector.appendChild(opt);
-          const cloned = opt.cloneNode();
-          if (primaryId != secondaryId) {
-            cloned.removeAttribute('selected');
-          }
-          secondarySelector.appendChild(cloned);
-      }
-	  if (secondaryId && primaryId != secondaryId && !secondarySelector.querySelector(`option[value="${secondaryId}"]`)) {
-		  const opt = document.createElement("option");
-		  opt.setAttribute("value", secondaryId);
-		  opt.setAttribute("selected", "selected");
-		  opt.setAttribute("label", settings["secondaryLabel"]);
-          secondarySelector.appendChild(opt);
-          const cloned = opt.cloneNode();
+        const opt = document.createElement("option");
+        opt.setAttribute("value", primaryId);
+        opt.setAttribute("selected", "selected");
+        opt.setAttribute("label", settings["primaryLabel"]);
+        primarySelector.appendChild(opt);
+        const cloned = opt.cloneNode();
+        if (primaryId != secondaryId) {
           cloned.removeAttribute('selected');
-          primarySelector.appendChild(cloned);
-	  }
+        }
+        secondarySelector.appendChild(cloned);
+      }
+      if (secondaryId && primaryId != secondaryId && !secondarySelector.querySelector(`option[value="${secondaryId}"]`)) {
+        const opt = document.createElement("option");
+        opt.setAttribute("value", secondaryId);
+        opt.setAttribute("selected", "selected");
+        opt.setAttribute("label", settings["secondaryLabel"]);
+        secondarySelector.appendChild(opt);
+        const cloned = opt.cloneNode();
+        cloned.removeAttribute('selected');
+        primarySelector.appendChild(cloned);
+      }
 
     }
 
@@ -212,16 +216,21 @@
       }
 
       // request settings and list of devices
-      $SD.api.sendToPlugin(uuid, actionInfo, {event: "getDeviceList"});
+      $SD.api.sendToPlugin(uuid, actionInfo, { event: "getDeviceList" });
     };
 
     function saveSettings() {
-      settings.primary = document.getElementById('primaryDevice').value;
-      settings.primaryLabel = document.querySelector(`#primaryDevice option[value="${settings.primary}"]`).label;
-      settings.secondary = document.getElementById('secondaryDevice').value;
-      settings.secondaryLabel = document.querySelector(`#secondaryDevice option[value="${settings.secondary}"]`).label;
-      settings.direction = document.getElementById('input').checked ? 'input' : 'output';
+      const isInput = document.getElementById('input').checked;
+      const devices = isInput ? inputDevices : outputDevices;
+      const primaryId = document.getElementById('primaryDevice').value;
+      const secondaryId = document.getElementById('secondaryDevice').value;
+      settings.primary = devices[primaryId];
+      settings.primaryLabel = document.querySelector(`#primaryDevice option[value="${primaryId}"]`).label;
+      settings.secondary = devices[secondaryId];
+      settings.secondaryLabel = document.querySelector(`#secondaryDevice option[value="${secondaryId}"]`).label;
+      settings.direction = isInput ? 'input' : 'output';
       settings.role = document.getElementById('defaultRole').checked ? 'default' : 'communication';
+      console.log(settings);
       $SD.api.setSettings(uuid, settings);
     }
   </script>

@@ -50,6 +50,25 @@ void to_json(json& j, const AudioDeviceState& state) {
   }
 }
 
+void from_json(const json& j, AudioDeviceState& state) {
+  if (j == "connected") {
+    state = AudioDeviceState::CONNECTED;
+    return;
+  }
+  if (j == "device_not_present") {
+    state = AudioDeviceState::DEVICE_NOT_PRESENT;
+    return;
+  }
+  if (j == "device_disabled") {
+    state = AudioDeviceState::DEVICE_DISABLED;
+    return;
+  }
+  if (j == "device_present_no_connection") {
+    state == AudioDeviceState::DEVICE_PRESENT_NO_CONNECTION;
+    return;
+  }
+}
+
 void to_json(json& j, const AudioDeviceInfo& device) {
   j = json(
     {{"id", device.id},
@@ -58,6 +77,17 @@ void to_json(json& j, const AudioDeviceInfo& device) {
      {"displayName", device.displayName},
      {"state", device.state}});
 }
+
+void from_json(const json& j, AudioDeviceInfo& device) {
+  device = {
+    .id = j.at("id"),
+    .interfaceName = j.at("interfaceName"),
+    .endpointName = j.at("endpointName"),
+    .displayName = j.at("displayName"),
+    .state = j.at("state"),
+  };
+}
+
 }// namespace FredEmmott::Audio
 
 void to_json(json& j, const AudioDeviceState& state) {
@@ -85,11 +115,9 @@ AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
   mCallbackHandle = std::move(AddDefaultAudioDeviceChangeCallback(std::bind(
     &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)));
-  ESDDebug("stored handle");
 }
 
 AudioSwitcherStreamDeckPlugin::~AudioSwitcherStreamDeckPlugin() {
-  ESDDebug("plugin destructor");
   mCallbackHandle = {};
 }
 
@@ -98,7 +126,6 @@ void AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged(
   AudioDeviceRole role,
   const std::string& device) {
   std::scoped_lock lock(mVisibleContextsMutex);
-  ESDDebug("default device change");
   for (const auto& [context, button] : mButtons) {
     if (button.settings.direction != direction) {
       continue;
@@ -123,7 +150,7 @@ void AudioSwitcherStreamDeckPlugin::KeyUpForAction(
   const std::string& inContext,
   const json& inPayload,
   const std::string& inDeviceID) {
-  ESDDebug("Key Up: {}", inPayload.dump());
+  ESDDebug("{}: {}", __FUNCTION__, inPayload.dump());
   std::scoped_lock lock(mVisibleContextsMutex);
 
   const auto settings = ButtonSettingsFromJSON(inPayload);
@@ -132,10 +159,12 @@ void AudioSwitcherStreamDeckPlugin::KeyUpForAction(
   // this looks inverted - but if state is 0, we want to move to state 1, so
   // we want the secondary devices. if state is 1, we want state 0, so we want
   // the primary device
-  const auto deviceId = (state != 0 || inAction == SET_ACTION_ID)
-                          ? settings.primaryDevice
-                          : settings.secondaryDevice;
+  const auto device = (state != 0 || inAction == SET_ACTION_ID)
+                        ? settings.primaryDevice
+                        : settings.secondaryDevice;
+  const auto& deviceId = device.id;
   if (deviceId.empty()) {
+    ESDDebug("Doing nothing, no device ID");
     return;
   }
 
@@ -153,9 +182,11 @@ void AudioSwitcherStreamDeckPlugin::KeyUpForAction(
     && deviceId == GetDefaultAudioDeviceID(settings.direction, settings.role)) {
     // We already have the correct device, undo the state change
     mConnectionManager->SetState(state, inContext);
+    ESDDebug("Already set, nothing to do");
     return;
   }
 
+  ESDDebug("Setting device to {}", deviceId);
   SetDefaultAudioDeviceID(settings.direction, settings.role, deviceId);
 }
 
@@ -168,8 +199,6 @@ void AudioSwitcherStreamDeckPlugin::WillAppearForAction(
   // Remember the context
   mVisibleContexts.insert(inContext);
   const auto settings = ButtonSettingsFromJSON(inPayload);
-  ESDDebug(
-    "Will appear: {} {}", settings.primaryDevice.c_str(), inAction.c_str());
   mButtons[inContext] = {inAction, inContext, settings};
   UpdateState(inContext);
 }
@@ -211,22 +240,49 @@ void AudioSwitcherStreamDeckPlugin::SendToPlugin(
 
 AudioSwitcherStreamDeckPlugin::ButtonSettings
 AudioSwitcherStreamDeckPlugin::ButtonSettingsFromJSON(const json& inPayload) {
+  if (!inPayload.contains("settings")) {
+    return {};
+  }
+  const auto jsonSettings = inPayload.at("settings");
+
+  if (!jsonSettings.contains("direction")) {
+    return {};
+  }
+
   ButtonSettings settings;
-  json jsonSettings;
-  EPLJSONUtils::GetObjectByName(inPayload, "settings", jsonSettings);
-  settings.primaryDevice
-    = EPLJSONUtils::GetStringByName(jsonSettings, "primary");
-  settings.secondaryDevice
-    = EPLJSONUtils::GetStringByName(jsonSettings, "secondary");
-  settings.direction
-    = EPLJSONUtils::GetStringByName(jsonSettings, "direction", "output")
-          == "output"
-        ? AudioDeviceDirection::OUTPUT
-        : AudioDeviceDirection::INPUT;
-  settings.role = EPLJSONUtils::GetStringByName(jsonSettings, "role", "default")
-                      == "communication"
-                    ? AudioDeviceRole::COMMUNICATION
-                    : AudioDeviceRole::DEFAULT;
+
+  if (jsonSettings.contains("direction")) {
+    settings.direction
+      = (jsonSettings.at("direction").get<std::string>() == "output")
+          ? AudioDeviceDirection::OUTPUT
+          : AudioDeviceDirection::INPUT;
+  }
+
+  if (jsonSettings.contains("role")) {
+    settings.role
+      = (jsonSettings.at("role").get<std::string>() == "communication")
+          ? AudioDeviceRole::COMMUNICATION
+          : AudioDeviceRole::DEFAULT;
+  }
+
+  if (jsonSettings.contains("primary")) {
+    const auto& primary = jsonSettings.at("primary");
+    if (primary.is_string()) {
+      settings.primaryDevice.id = primary;
+    } else {
+      settings.primaryDevice = primary;
+    }
+  }
+
+  if (jsonSettings.contains("secondary")) {
+    const auto& secondary = jsonSettings.at("secondary");
+    if (secondary.is_string()) {
+      settings.secondaryDevice.id = secondary;
+    } else {
+      settings.secondaryDevice = secondary;
+    }
+  }
+
   return settings;
 }
 
@@ -241,19 +297,19 @@ void AudioSwitcherStreamDeckPlugin::UpdateState(
         ? GetDefaultAudioDeviceID(settings.direction, settings.role)
         : optionalDefaultDevice;
   ESDDebug(
-    "setting active ID {} {} {}", activeDevice, settings.primaryDevice,
-    settings.secondaryDevice);
+    "setting active ID {} {} {}", activeDevice, settings.primaryDevice.id,
+    settings.secondaryDevice.id);
 
   std::scoped_lock lock(mVisibleContextsMutex);
   if (action == SET_ACTION_ID) {
     mConnectionManager->SetState(
-      activeDevice == settings.primaryDevice ? 0 : 1, context);
+      activeDevice == settings.primaryDevice.id ? 0 : 1, context);
     return;
   }
 
-  if (activeDevice == settings.primaryDevice) {
+  if (activeDevice == settings.primaryDevice.id) {
     mConnectionManager->SetState(0, context);
-  } else if (activeDevice == settings.secondaryDevice) {
+  } else if (activeDevice == settings.secondaryDevice.id) {
     mConnectionManager->SetState(1, context);
   } else {
     mConnectionManager->ShowAlertForContext(context);
