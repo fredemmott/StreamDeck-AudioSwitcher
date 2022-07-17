@@ -51,6 +51,7 @@ void to_json(nlohmann::json& j, const AudioDeviceInfo& device) {
     {"interfaceName", device.interfaceName},
     {"endpointName", device.endpointName},
     {"displayName", device.displayName},
+    {"direction", device.direction},
     {"state", device.state},
   };
 }
@@ -61,6 +62,7 @@ void from_json(const nlohmann::json& j, AudioDeviceInfo& device) {
     .interfaceName = j.at("interfaceName"),
     .endpointName = j.at("endpointName"),
     .displayName = j.at("displayName"),
+    .direction = j.at("direction"),
     .state = j.at("state"),
   };
 }

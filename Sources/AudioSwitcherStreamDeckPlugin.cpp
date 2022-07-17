@@ -61,8 +61,11 @@ AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
     NULL, COINIT_MULTITHREADED);// initialize COM for the main thread
 #endif
   mCallbackHandle = std::move(AddDefaultAudioDeviceChangeCallback(std::bind(
-    &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)));
+    &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged,
+    this,
+    std::placeholders::_1,
+    std::placeholders::_2,
+    std::placeholders::_3)));
 }
 
 AudioSwitcherStreamDeckPlugin::~AudioSwitcherStreamDeckPlugin() {
@@ -112,16 +115,15 @@ void AudioSwitcherStreamDeckPlugin::KeyUpForAction(
   // this looks inverted - but if state is 0, we want to move to state 1, so
   // we want the secondary devices. if state is 1, we want state 0, so we want
   // the primary device
-  const auto device = (state != 0 || inAction == SET_ACTION_ID)
-                        ? settings.primaryDevice
-                        : settings.secondaryDevice;
-  const auto& deviceId = device.id;
-  if (deviceId.empty()) {
+  const auto deviceID = (state != 0 || inAction == SET_ACTION_ID)
+    ? settings.VolatilePrimaryID()
+    : settings.VolatileSecondaryID();
+  if (deviceID.empty()) {
     ESDDebug("Doing nothing, no device ID");
     return;
   }
 
-  const auto deviceState = GetAudioDeviceState(deviceId);
+  const auto deviceState = GetAudioDeviceState(deviceID);
   if (deviceState != AudioDeviceState::CONNECTED) {
     if (inAction == SET_ACTION_ID) {
       mConnectionManager->SetState(1, inContext);
@@ -132,15 +134,15 @@ void AudioSwitcherStreamDeckPlugin::KeyUpForAction(
 
   if (
     inAction == SET_ACTION_ID
-    && deviceId == GetDefaultAudioDeviceID(settings.direction, settings.role)) {
+    && deviceID == GetDefaultAudioDeviceID(settings.direction, settings.role)) {
     // We already have the correct device, undo the state change
     mConnectionManager->SetState(state, inContext);
     ESDDebug("Already set, nothing to do");
     return;
   }
 
-  ESDDebug("Setting device to {}", deviceId);
-  SetDefaultAudioDeviceID(settings.direction, settings.role, deviceId);
+  ESDDebug("Setting device to {}", deviceID);
+  SetDefaultAudioDeviceID(settings.direction, settings.role, deviceID);
 }
 
 void AudioSwitcherStreamDeckPlugin::WillAppearForAction(
@@ -200,7 +202,8 @@ void AudioSwitcherStreamDeckPlugin::SendToPlugin(
     const auto outputList = GetAudioDeviceList(AudioDeviceDirection::OUTPUT);
     const auto inputList = GetAudioDeviceList(AudioDeviceDirection::INPUT);
     mConnectionManager->SendToPropertyInspector(
-      inAction, inContext,
+      inAction,
+      inContext,
       json({
         {"event", event},
         {"outputDevices", outputList},
@@ -216,28 +219,30 @@ void AudioSwitcherStreamDeckPlugin::UpdateState(
   const auto button = mButtons[context];
   const auto action = button.action;
   const auto settings = button.settings;
-  const auto activeDevice
-    = optionalDefaultDevice.empty()
-        ? GetDefaultAudioDeviceID(settings.direction, settings.role)
-        : optionalDefaultDevice;
-  ESDDebug(
-    "setting active ID {} {} {}", activeDevice, settings.primaryDevice.id,
-    settings.secondaryDevice.id);
+  const auto activeDevice = optionalDefaultDevice.empty()
+    ? GetDefaultAudioDeviceID(settings.direction, settings.role)
+    : optionalDefaultDevice;
+
+  const auto primaryID = settings.VolatilePrimaryID();
+  const auto secondaryID = settings.VolatileSecondaryID();
 
   std::scoped_lock lock(mVisibleContextsMutex);
   if (action == SET_ACTION_ID) {
-    mConnectionManager->SetState(
-      activeDevice == settings.primaryDevice.id ? 0 : 1, context);
+    mConnectionManager->SetState(activeDevice == primaryID ? 0 : 1, context);
     return;
   }
 
-  if (activeDevice == settings.primaryDevice.id) {
+  if (activeDevice == primaryID) {
     mConnectionManager->SetState(0, context);
-  } else if (activeDevice == settings.secondaryDevice.id) {
-    mConnectionManager->SetState(1, context);
-  } else {
-    mConnectionManager->ShowAlertForContext(context);
+    return;
   }
+
+  if (activeDevice == secondaryID) {
+    mConnectionManager->SetState(1, context);
+    return;
+  }
+
+  mConnectionManager->ShowAlertForContext(context);
 }
 
 void AudioSwitcherStreamDeckPlugin::DeviceDidConnect(

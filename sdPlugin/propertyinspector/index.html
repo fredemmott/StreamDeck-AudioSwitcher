@@ -51,6 +51,13 @@
       <select class="sdpi-item-value select" id="secondaryDevice" onchange="saveSettings();">
       </select>
     </div>
+    <div type="select" class="sdpi-item">
+      <div class="sdpi-item-label">Device matching</div>
+      <select class="sdpi-item-value select" id="matchStrategy" onchange="saveSettings();">
+        <option value="ID">Exact</option>
+        <option value="Fuzzy">Fuzzy</option>
+      </select>
+    </div>
   </div>
 
   <script src="common.js"></script>
@@ -87,6 +94,15 @@
       const isCommunication = settings.role == "communication";
       document.getElementById('communicationRole').checked = isCommunication;
       document.getElementById('defaultRole').checked = !isCommunication;
+
+      const matchStrategy = settings.matchStrategy || "ID";
+      for (const child of document.getElementById('matchStrategy').children) {
+        if (child.value == matchStrategy) {
+          child.setAttribute("selected", "selected");
+        } else {
+          child.removeAttribute("selected");
+        }
+      }
 
       inputDevices = payload['inputDevices'];
       outputDevices = payload['outputDevices'];
@@ -230,6 +246,7 @@
       settings.secondaryLabel = document.querySelector(`#secondaryDevice option[value="${secondaryId}"]`).label;
       settings.direction = isInput ? 'input' : 'output';
       settings.role = document.getElementById('defaultRole').checked ? 'default' : 'communication';
+      settings.matchStrategy = document.getElementById('matchStrategy').value;
       console.log(settings);
       $SD.api.setSettings(uuid, settings);
     }

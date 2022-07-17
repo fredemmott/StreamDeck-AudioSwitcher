@@ -1,4 +1,6 @@
 BasedOnStyle: Google
+AlignConsecutiveDeclarations: 'false'
+AlignOperands: 'false'
 AlignEscapedNewlinesLeft: DontAlign
 AlignTrailingComments: 'false'
 AlignAfterOpenBracket: AlwaysBreak
@@ -7,7 +9,7 @@ AllowShortBlocksOnASingleLine: 'false'
 AllowShortIfStatementsOnASingleLine: 'false'
 AllowShortLoopsOnASingleLine: 'false'
 AllowShortFunctionsOnASingleLine: false
-BinPackArguments: 'true'
+BinPackArguments: 'false'
 BinPackParameters: 'false'
 BreakBeforeBinaryOperators: 'true'
 ColumnLimit: '80'
@@ -18,6 +20,7 @@ IndentWidth: '2'
 MaxEmptyLinesToKeep: '1'
 SpaceBeforeAssignmentOperators: 'true'
 SpacesBeforeTrailingComments: '0'
+Standard: c++20
 TabWidth: '2'
 UseTab: Never
 ReflowComments: true

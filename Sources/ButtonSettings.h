@@ -11,11 +11,21 @@
 
 using namespace FredEmmott::Audio;
 
+enum class DeviceMatchStrategy {
+  ID,
+  Fuzzy,
+};
+
 struct ButtonSettings {
   AudioDeviceDirection direction = AudioDeviceDirection::INPUT;
   AudioDeviceRole role = AudioDeviceRole::DEFAULT;
   AudioDeviceInfo primaryDevice;
   AudioDeviceInfo secondaryDevice;
+  DeviceMatchStrategy matchStrategy = DeviceMatchStrategy::ID;
+
+  // Changes if there's a fuzzy match
+  std::string VolatilePrimaryID() const;
+  std::string VolatileSecondaryID() const;
 };
 
 void from_json(const nlohmann::json&, ButtonSettings&);
