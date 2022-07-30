@@ -20,6 +20,7 @@ LICENSE file.
 #include <StreamDeckSDK/ESDLogger.h>
 
 #include <atomic>
+#include <functional>
 #include <mutex>
 
 #ifdef _MSC_VER
