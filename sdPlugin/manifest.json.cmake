@@ -48,7 +48,7 @@
     },
     {
       "Platform": "mac",
-      "MinimumVersion": "12.00"
+      "MinimumVersion": "10.15"
     }
   ],
   "SDKVersion": 2,

@@ -85,8 +85,7 @@ jobs:
         shell: pwsh
         run: |
           cmake ${{github.workspace}}/source `
-            "-DCMAKE_INSTALL_PREFIX=${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin" `
-            "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.14"
+            "-DCMAKE_INSTALL_PREFIX=${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin"
       - name: Install static files
         working-directory: build/sdPlugin
         run: make install
