@@ -48,7 +48,7 @@
     },
     {
       "Platform": "mac",
-      "MinimumVersion": "10.15"
+      "MinimumVersion": "${CMAKE_OSX_DEPLOYMENT_TARGET}"
     }
   ],
   "SDKVersion": 2,
