@@ -68,6 +68,7 @@ jobs:
             os_version: 12 # would prefer -latest, but that's 11 which has lacking support for C++20
           - target: macos-x86_64
             os: macos
+            arch: arm64
             os_version: 12
   streamDeckPlugin:
     name: streamDeckPlugin/${{matrix.build-type}}
