@@ -60,12 +60,8 @@ AudioSwitcherStreamDeckPlugin::AudioSwitcherStreamDeckPlugin() {
   CoInitializeEx(
     NULL, COINIT_MULTITHREADED);// initialize COM for the main thread
 #endif
-  mCallbackHandle = std::move(AddDefaultAudioDeviceChangeCallback(std::bind(
-    &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged,
-    this,
-    std::placeholders::_1,
-    std::placeholders::_2,
-    std::placeholders::_3)));
+  mCallbackHandle = AddDefaultAudioDeviceChangeCallback(std::bind_front(
+    &AudioSwitcherStreamDeckPlugin::OnDefaultDeviceChanged, this));
 }
 
 AudioSwitcherStreamDeckPlugin::~AudioSwitcherStreamDeckPlugin() {
