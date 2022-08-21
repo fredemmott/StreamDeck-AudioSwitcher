@@ -2,8 +2,8 @@ include(FetchContent)
 
 FetchContent_Declare(
   StreamDeckSDK
-  GIT_REPOSITORY https://github.com/fredemmott/StreamDeck-CPPSDK
-  GIT_TAG 6344ab600ce04e15b6835483ddf0304d13a67fbd
+  URL https://github.com/fredemmott/StreamDeck-CPPSDK/releases/download/v3.0.1/StreamDeckSDK-v3.0.1.zip
+  URL_HASH SHA512=152ac1177df398fb3d92b84e3a997dbcb15d3f331d3d9ecdef5bcc77c7d773534e5ec23104ced35a59c85ac71f940a74c074d666cb24fd4289f6297f407ea4a8
 )
 
 FetchContent_GetProperties(StreamDeckSDK)
