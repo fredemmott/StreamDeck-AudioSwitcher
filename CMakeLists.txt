@@ -16,12 +16,13 @@ set(VERSION_BUILD "${DEFAULT_VERSION_BUILD}" CACHE STRING "patch component of ve
 project(
   com.fredemmott.audiooutputswitch.sdPlugin
   LANGUAGES CXX
-  VERSION 3.1.0.${VERSION_BUILD}
+  VERSION 3.1.3.${VERSION_BUILD}
 )
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_CXX_EXTENSIONS false)
+
 if(WIN32)
   add_compile_definitions(
     "UNICODE=1"
@@ -31,7 +32,8 @@ if(WIN32)
     "_WIN32_WINNT=0xa00"
   )
 endif()
-if (MSVC)
+
+if(MSVC)
   add_compile_options(
     "/diagnostics:caret" # more detailed error messages
     "/EHsc" # standard-compliant exception handling
