@@ -22,6 +22,16 @@ Download the `com.fredemmott.audiooutputswitch.streamDeckPlugin` file from [the 
 This uses undocumented and unsupported Windows APIs. These have apparently worked since Windows 7, but they
 might stop working at any time or have unexpected side effects.
 
+
+# FAQ
+
+## Changing both 'communication' and 'default'
+
+Use a multi-action switch, not a normal multi-action:
+
+![image](https://user-images.githubusercontent.com/360927/206601016-e8785e16-edf9-4c6e-8829-1c54b9acaeaa.png)
+
+
 # Getting Help
 
 I make this for my own use, and I share this in the hope others find it useful; I'm not able to commit to support, bug fixes, or feature development.
