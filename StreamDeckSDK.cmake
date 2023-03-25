@@ -2,8 +2,8 @@ include(FetchContent)
 
 FetchContent_Declare(
   StreamDeckSDK
-  URL https://github.com/fredemmott/StreamDeck-CPPSDK/releases/download/v3.0.1/StreamDeckSDK-v3.0.1.zip
-  URL_HASH SHA512=152ac1177df398fb3d92b84e3a997dbcb15d3f331d3d9ecdef5bcc77c7d773534e5ec23104ced35a59c85ac71f940a74c074d666cb24fd4289f6297f407ea4a8
+  URL https://github.com/fredemmott/StreamDeck-CPPSDK/releases/download/v3.0.2/StreamDeckSDK-v3.0.2.zip
+  URL_HASH SHA512=4881ca3b93f92cbd4542ccbff57ad2a2028dd00d1064fc9bc7eecbe04a9573c48efb23693304aee06eaab8bcdef9c263c01e2482a1be2d2f7be9cdaf6c10fd60
 )
 
 FetchContent_GetProperties(StreamDeckSDK)
