@@ -1,0 +1,73 @@
+name: Create StreamDeck plugin
+on:
+    workflow_call:
+jobs:
+    streamDeckPlugin:
+        name: StreamDeck Plugin
+        runs-on: macos-latest
+        steps:
+          - uses: actions/checkout@v4
+            with:
+              path: source
+          - name: Make build directory
+            run: cmake -E make_directory build
+          - name: Configure
+            working-directory: build
+            shell: pwsh
+            run: |
+              cmake ${{github.workspace}}/source `
+                "-DCMAKE_INSTALL_PREFIX=${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin"
+          - name: Install static files
+            working-directory: build/sdPlugin
+            run: make install
+          - name: Download build artifacts
+            uses: actions/download-artifact@v4
+            with:
+              path: ${{runner.temp}}/artifacts
+          - name: Display downloaded files
+            run: ls -R
+            working-directory: ${{runner.temp}}/artifacts
+          - name: Combine MacOS artifacts
+            working-directory: ${{runner.temp}}
+            run: |
+              lipo -create \
+                artifacts/MacOS-arm64-RelWithDebInfo/sdaudioswitch \
+                artifacts/MacOS-x86_64-RelWithDebInfo/sdaudioswitch \
+                -output sdaudioswitch
+              mkdir dsym
+              cp -R \
+                artifacts/DebugSymbols-macos-arm64-RelWithDebInfo.dSYM \
+                dsym/sdaudioswitch.dSYM
+              DSYM_FILE=Contents/Resources/DWARF/sdaudioswitch
+              rm dsym/sdaudioswitch.dSYM/${DSYM_FILE}
+              lipo -create \
+                artifacts/*.dSYM/${DSYM_FILE} \
+                -output dsym/sdaudioswitch.dSYM/${DSYM_FILE}
+          - name: Upload MacOS debug symbols
+            uses: actions/upload-artifact@v4
+            with:
+              name: sdaudioswitch-lipo-dsym
+              path: ${{runner.temp}}/dsym
+          - name: Copy executables
+            working-directory: ${{runner.temp}}
+            run: |
+              install -m755 \
+                sdaudioswitch \
+                com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch
+              install -m755 \
+                artifacts/Windows-RelWithDebInfo/sdaudioswitch.exe \
+                com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch.exe
+          - name: Checkout DistributionTool
+            uses: actions/checkout@v4
+            with:
+              ref: distributiontool-v1.4
+          - name: Build .streamDeckPlugin
+            run: |
+              ./DistributionTool -b \
+                -i ${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin \
+                -o .
+          - name: Upload .streamDeckPlugin
+            uses: actions/upload-artifact@v4
+            with:
+              name: com.fredemmott.audiooutputswitch.streamDeckPlugin
+              path: com.fredemmott.audiooutputswitch.streamDeckPlugin

@@ -5,7 +5,7 @@ jobs:
     name: Build ${{matrix.os}}/${{matrix.arch}}/${{matrix.build-type}}
     runs-on: ${{matrix.os}}-${{matrix.os_version}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: source
       - name: Make build directory
@@ -41,26 +41,35 @@ jobs:
       - name: Compile
         working-directory: build
         run: cmake --build . --config ${{matrix.build-type}} --parallel
-      - name: Install
-        working-directory: build
-        run: cmake --install . --config ${{matrix.build-type}}
+      - name: Split out MacOS debug symbols
+        if: matrix.os == 'macos' && matrix.build-type == 'RelWithDebInfo'
+        working-directory: build/Sources
+        run: |
+          dsymutil sdaudioswitch 
+          strip -x -S sdaudioswitch
       - name: Upload MacOS Executable
         if: matrix.os == 'macos' && matrix.build-type != 'Debug'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MacOS-${{matrix.arch}}-${{matrix.build-type}}
           path: build/Sources/sdaudioswitch
+      - name: Upload MacOS debug symbols
+        if: matrix.os == 'macos' && matrix.build-type == 'RelWithDebInfo'
+        uses: actions/upload-artifact@v4
+        with:
+          name: DebugSymbols-${{matrix.os}}-${{matrix.arch}}-${{matrix.build-type}}.dSYM
+          path: build/Sources/sdaudioswitch.dSYM
       - name: Upload Windows Executable
         if: matrix.os == 'windows' && matrix.build-type != 'Debug'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Windows-${{matrix.build-type}}
           path: build/Sources/${{matrix.build-type}}/sdaudioswitch.exe
       - name: Upload Windows Debug Symbols
-        if: matrix.os == 'windows' && matrix.build-type != 'Release' && matrix.build-type != 'Debug'
-        uses: actions/upload-artifact@v3
+        if: matrix.os == 'windows' && matrix.build-type == 'RelWithDebInfo'
+        uses: actions/upload-artifact@v4
         with:
-          name: DebugSymbols-Windows-${{matrix.build-type}}
+          name: DebugSymbols-${{matrix.os}}-${{matrix.build-type}}
           path: build/Sources/${{matrix.build-type}}/sdaudioswitch.pdb
     strategy:
       matrix:
@@ -80,104 +89,10 @@ jobs:
             arch: x86_64
             os_version: 12
   streamDeckPlugin:
-    name: streamDeckPlugin/${{matrix.build-type}}
-    needs: [build]
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          path: source
-      - name: Make build directory
-        run: cmake -E make_directory build
-      - name: Configure
-        working-directory: build
-        shell: pwsh
-        run: |
-          cmake ${{github.workspace}}/source `
-            "-DCMAKE_INSTALL_PREFIX=${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin"
-      - name: Install static files
-        working-directory: build/sdPlugin
-        run: make install
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: ${{runner.temp}}/artifacts
-      - name: Display downloaded files
-        run: ls -R
-        working-directory: ${{runner.temp}}/artifacts
-      - name: Copy executables
-        working-directory: ${{runner.temp}}
-        run: |
-          lipo -create \
-            artifacts/MacOS-arm64-${{matrix.build-type}}/sdaudioswitch \
-            artifacts/MacOS-x86_64-${{matrix.build-type}}/sdaudioswitch \
-            -output com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch
-          install -m755 \
-            artifacts/Windows-${{matrix.build-type}}/sdaudioswitch.exe \
-            com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch.exe
-      - name: Checkout DistributionTool
-        uses: actions/checkout@v3
-        with:
-          ref: distributiontool-v1.4
-      - name: Build .streamDeckPlugin
-        run: |
-          ./DistributionTool -b \
-            -i ${{runner.temp}}/com.fredemmott.audiooutputswitch.sdPlugin \
-            -o .
-      - name: Upload .streamDeckPlugin
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{matrix.build-type}}-StreamDeckPlugin
-          path: com.fredemmott.audiooutputswitch.streamDeckPlugin
-    strategy:
-      matrix:
-        build-type: [RelWithDebInfo]
+    name: StreamDeck Plugin
+    needs: build
+    uses: ./.github/workflows/sdplugin.yml
   release:
-    needs: [streamDeckPlugin]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/download-artifact@v3
-      with:
-        path: ${{runner.temp}}/artifacts
-    - name: Display downloaded files
-      run: ls -R
-      working-directory: ${{runner.temp}}/artifacts
-    - name: Check if this is a release push
-      id: ref
-      run: |
-        if echo ${{github.ref}} | grep --silent refs/tags/v; then
-          echo "::set-output name=is-release::true"
-          echo "::set-output name=tag::$(echo ${{github.ref}} | awk -F/ '{print $NF}')"
-        else
-          echo "::set-output name=is-release::false"
-        fi
-    - name: Create Draft Release
-      id: create-release
-      if: steps.ref.outputs.is-release == 'true'
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        release_name: Release ${{ steps.ref.outputs.tag }}
-        tag_name: ${{steps.ref.outputs.tag}}
-        draft: true
-    - name: Attach Release Build
-      if: steps.ref.outputs.is-release == 'true'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: ${{runner.temp}}/artifacts/RelWithDebInfo-StreamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
-        asset_name: com.fredemmott.audiooutputswitch.streamDeckPlugin
-        asset_content_type: application/octet-stream
-    - name: Attach PDB Files
-      if: steps.ref.outputs.is-release == 'true'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create-release.outputs.upload_url }}
-        asset_path: ${{runner.temp}}/artifacts/DebugSymbols-Windows-RelWithDebInfo/sdaudioswitch.pdb
-        asset_name: sdaudioswitch.pdb
-        asset_content_type: application/octet-stream
+    needs: streamDeckPlugin
+    uses: ./.github/workflows/release.yml
+    secrets: inherit

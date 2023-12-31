@@ -1,0 +1,62 @@
+name: Prepare release
+on:
+    workflow_call:
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/download-artifact@v4
+          with:
+            path: ${{runner.temp}}/artifacts
+        - name: Display downloaded files
+          run: ls -R
+          working-directory: ${{runner.temp}}/artifacts
+        - name: Check if this is a release push
+          id: ref
+          run: |
+            if echo ${{github.ref}} | grep --silent refs/tags/v; then
+              echo "is-release=true" >> $GITHUB_OUTPUT
+              echo "tag=$(echo ${{github.ref}} | awk -F/ '{print $NF}')" >> $GITHUB_OUTPUT
+            else
+              echo "is-release=false" >> $GITHUB_OUTPUT
+            fi
+        - name: Create Draft Release
+          id: create-release
+          if: steps.ref.outputs.is-release == 'true'
+          uses: actions/create-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            release_name: Release ${{ steps.ref.outputs.tag }}
+            tag_name: ${{steps.ref.outputs.tag}}
+            draft: true
+        - name: Attach Release Build
+          if: steps.ref.outputs.is-release == 'true'
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ steps.create-release.outputs.upload_url }}
+            asset_path: ${{runner.temp}}/artifacts/RelWithDebInfo-StreamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
+            asset_name: com.fredemmott.audiooutputswitch.streamDeckPlugin
+            asset_content_type: application/octet-stream
+        - name: Attach PDB Files
+          if: steps.ref.outputs.is-release == 'true'
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ steps.create-release.outputs.upload_url }}
+            asset_path: ${{runner.temp}}/artifacts/DebugSymbols-windows-RelWithDebInfo/sdaudioswitch.pdb
+            asset_name: sdaudioswitch.pdb
+            asset_content_type: application/octet-stream
+        - name: Attach dSYM Files
+          if: steps.ref.outputs.is-release == 'true'
+          uses: actions/upload-release-asset@v1
+          env:
+            GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ steps.create-release.outputs.upload_url }}
+            asset_path: ${{runner.temp}}/artifacts/sdaudioswitch-lipo-dsym
+            asset_name: sdaudioswitch.dSYM
+            asset_content_type: application/octet-stream
