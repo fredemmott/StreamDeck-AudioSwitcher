@@ -16,7 +16,7 @@ set(VERSION_BUILD "${DEFAULT_VERSION_BUILD}" CACHE STRING "patch component of ve
 project(
   com.fredemmott.audiooutputswitch.sdPlugin
   LANGUAGES CXX
-  VERSION 3.1.3.${VERSION_BUILD}
+  VERSION 3.2.0.${VERSION_BUILD}
 )
 
 set(CMAKE_CXX_STANDARD 20)
