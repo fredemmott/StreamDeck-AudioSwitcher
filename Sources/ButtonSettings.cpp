@@ -94,6 +94,9 @@ std::string GetVolatileID(
   ESDDebug("Looking for a fuzzy match: {} -> {}", device.interfaceName, fuzzyInterface);
 
   for (const auto& [otherID, other] : GetAudioDeviceList(device.direction)) {
+    if (other.state != AudioDeviceState::CONNECTED) {
+      continue;
+    }
     const auto otherFuzzyInterface = FuzzifyInterface(other.interfaceName);
     ESDDebug("Trying {} -> {}", other.interfaceName, otherFuzzyInterface);
     if (
