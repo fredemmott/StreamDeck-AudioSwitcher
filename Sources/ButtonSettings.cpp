@@ -10,6 +10,8 @@
 
 #include "audio_json.h"
 
+#include <regex>
+
 NLOHMANN_JSON_SERIALIZE_ENUM(
   DeviceMatchStrategy,
   {
@@ -62,6 +64,17 @@ void to_json(nlohmann::json& j, const ButtonSettings& bs) {
 }
 
 namespace {
+
+std::string FuzzifyInterface(const std::string& name) {
+  // Windows likes to replace "Foo" with "2- Foo"
+  const std::regex pattern {"^([0-9]+- )?(.+)$"};
+  std::smatch captures;
+  if (!std::regex_match(name, captures, pattern)) {
+    return name;
+  } 
+  return captures[2];
+}
+
 std::string GetVolatileID(
   const AudioDeviceInfo& device,
   DeviceMatchStrategy strategy) {
@@ -77,9 +90,14 @@ std::string GetVolatileID(
     return device.id;
   }
 
+  const auto fuzzyInterface = FuzzifyInterface(device.interfaceName);
+  ESDDebug("Looking for a fuzzy match: {} -> {}", device.interfaceName, fuzzyInterface);
+
   for (const auto& [otherID, other] : GetAudioDeviceList(device.direction)) {
+    const auto otherFuzzyInterface = FuzzifyInterface(other.interfaceName);
+    ESDDebug("Trying {} -> {}", other.interfaceName, otherFuzzyInterface);
     if (
-      device.interfaceName == other.interfaceName
+      fuzzyInterface == otherFuzzyInterface
       && device.endpointName == other.endpointName) {
       ESDDebug(
         "Fuzzy device match for {}/{}",
