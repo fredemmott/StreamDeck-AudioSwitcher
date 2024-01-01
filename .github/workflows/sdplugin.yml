@@ -1,9 +1,8 @@
-name: Create StreamDeck plugin
 on:
     workflow_call:
 jobs:
     streamDeckPlugin:
-        name: StreamDeck Plugin
+        name: Package
         runs-on: macos-latest
         steps:
           - uses: actions/checkout@v4
@@ -43,11 +42,15 @@ jobs:
               lipo -create \
                 artifacts/*.dSYM/${DSYM_FILE} \
                 -output dsym/sdaudioswitch.dSYM/${DSYM_FILE}
+                (
+                  cd dsym
+                  zip -r sdaudioswitch.dSYM.zip sdaudioswitch.dSYM
+                )
           - name: Upload MacOS debug symbols
             uses: actions/upload-artifact@v4
             with:
               name: sdaudioswitch-lipo-dsym
-              path: ${{runner.temp}}/dsym
+              path: ${{runner.temp}}/dsym/sdaudioswitch.dSYM.zip
           - name: Copy executables
             working-directory: ${{runner.temp}}
             run: |

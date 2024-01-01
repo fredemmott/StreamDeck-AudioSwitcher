@@ -23,40 +23,12 @@ jobs:
         - name: Create Draft Release
           id: create-release
           if: steps.ref.outputs.is-release == 'true'
-          uses: actions/create-release@v1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
           with:
-            release_name: Release ${{ steps.ref.outputs.tag }}
             tag_name: ${{steps.ref.outputs.tag}}
+            prerelease: ${{contains(github.ref_name, '-')}}
             draft: true
-        - name: Attach Release Build
-          if: steps.ref.outputs.is-release == 'true'
-          uses: actions/upload-release-asset@v1
-          env:
-            GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create-release.outputs.upload_url }}
-            asset_path: ${{runner.temp}}/artifacts/com.fredemmott.micmutetoggle.streamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
-            asset_name: com.fredemmott.audiooutputswitch.streamDeckPlugin
-            asset_content_type: application/octet-stream
-        - name: Attach PDB Files
-          if: steps.ref.outputs.is-release == 'true'
-          uses: actions/upload-release-asset@v1
-          env:
-            GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create-release.outputs.upload_url }}
-            asset_path: ${{runner.temp}}/artifacts/DebugSymbols-windows-RelWithDebInfo/sdaudioswitch.pdb
-            asset_name: sdaudioswitch.pdb
-            asset_content_type: application/octet-stream
-        - name: Attach dSYM Files
-          if: steps.ref.outputs.is-release == 'true'
-          uses: actions/upload-release-asset@v1
-          env:
-            GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create-release.outputs.upload_url }}
-            asset_path: ${{runner.temp}}/artifacts/sdaudioswitch-lipo-dsym
-            asset_name: sdaudioswitch.dSYM
-            asset_content_type: application/octet-stream
+            files: |
+              ${{runner.temp}}/artifacts/com.fredemmott.audiooutputswitch.streamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
+              ${{runner.temp}}/artifacts/DebugSymbols-windows-RelWithDebInfo/sdmicmute.pdb
+              ${{runner.temp}}/artifacts/sdmicmute-lipo-dsym/sdmicmute.dSYM.zip

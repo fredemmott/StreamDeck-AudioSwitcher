@@ -89,7 +89,7 @@ jobs:
             arch: x86_64
             os_version: 12
   streamDeckPlugin:
-    name: StreamDeck Plugin
+    name: Package
     needs: build
     uses: ./.github/workflows/sdplugin.yml
   release:
