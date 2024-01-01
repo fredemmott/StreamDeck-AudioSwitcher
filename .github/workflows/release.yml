@@ -37,7 +37,7 @@ jobs:
             GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
           with:
             upload_url: ${{ steps.create-release.outputs.upload_url }}
-            asset_path: ${{runner.temp}}/artifacts/RelWithDebInfo-StreamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
+            asset_path: ${{runner.temp}}/artifacts/com.fredemmott.micmutetoggle.streamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
             asset_name: com.fredemmott.audiooutputswitch.streamDeckPlugin
             asset_content_type: application/octet-stream
         - name: Attach PDB Files
