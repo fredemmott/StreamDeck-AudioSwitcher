@@ -30,5 +30,5 @@ jobs:
             draft: true
             files: |
               ${{runner.temp}}/artifacts/com.fredemmott.audiooutputswitch.streamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
-              ${{runner.temp}}/artifacts/DebugSymbols-windows-RelWithDebInfo/sdmicmute.pdb
-              ${{runner.temp}}/artifacts/sdmicmute-lipo-dsym/sdmicmute.dSYM.zip
+              ${{runner.temp}}/artifacts/DebugSymbols-windows-RelWithDebInfo/sdaudioswitch.pdb
+              ${{runner.temp}}/artifacts/sdaudioswitch-lipo-dsym/sdmicmute.dSYM.zip
