@@ -49,6 +49,7 @@ jobs:
           strip -x -S sdaudioswitch
       - name: Isolate artifacts
         shell: pwsh
+        if: matrix.build-type == 'RelWithDebInfo'
         run: |
           $Out = "${{runner.temp}}/out"
           New-Item -ItemType "directory" -Path "${{runner.temp}}/out"
