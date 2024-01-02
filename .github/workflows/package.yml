@@ -30,17 +30,17 @@ jobs:
             working-directory: ${{runner.temp}}
             run: |
               lipo -create \
-                artifacts/MacOS-arm64-RelWithDebInfo/sdaudioswitch \
-                artifacts/MacOS-x86_64-RelWithDebInfo/sdaudioswitch \
+                artifacts/build-macos-arm64-RelWithDebInfo/sdaudioswitch \
+                artifacts/build-macos-x86_64-RelWithDebInfo/sdaudioswitch \
                 -output sdaudioswitch
               mkdir dsym
               cp -R \
-                artifacts/DebugSymbols-macos-arm64-RelWithDebInfo.dSYM \
+                artifacts/build-macos-arm64-RelWithDebInfo/*.dSYM \
                 dsym/sdaudioswitch.dSYM
               DSYM_FILE=Contents/Resources/DWARF/sdaudioswitch
               rm dsym/sdaudioswitch.dSYM/${DSYM_FILE}
               lipo -create \
-                artifacts/*.dSYM/${DSYM_FILE} \
+                artifacts/build-macos*/*.dSYM/${DSYM_FILE} \
                 -output dsym/sdaudioswitch.dSYM/${DSYM_FILE}
                 (
                   cd dsym
@@ -58,7 +58,7 @@ jobs:
                 sdaudioswitch \
                 com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch
               install -m755 \
-                artifacts/Windows-RelWithDebInfo/sdaudioswitch.exe \
+                artifacts/build-windows-x86_64-RelWithDebInfo/sdaudioswitch.exe \
                 com.fredemmott.audiooutputswitch.sdPlugin/sdaudioswitch.exe
           - name: Checkout DistributionTool
             uses: actions/checkout@v4
