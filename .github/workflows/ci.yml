@@ -2,92 +2,9 @@ name: Continuous Integration
 on: [push, pull_request]
 jobs:
   build:
-    name: Build ${{matrix.os}}/${{matrix.arch}}/${{matrix.build-type}}
-    runs-on: ${{matrix.os}}-${{matrix.os_version}}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: source
-      - name: Make build directory
-        run: cmake -E make_directory build
-      - name: Fetch code-signing key
-        id: signing-key
-        if: (matrix.os == 'windows') && (github.repository == 'fredemmott/StreamDeck-AudioSwitcher') && (github.event_name == 'push') && (github.actor == 'fredemmott')
-        env:
-          CODE_SIGNING_PFX_BASE64: ${{ secrets.CODE_SIGNING_PFX_BASE64 }}
-        run: |
-          $KeyFile = "${{runner.temp}}/MyCert.pfx"
-          [System.Convert]::FromBase64String($Env:CODE_SIGNING_PFX_BASE64) `
-            | Set-Content $KeyFile -AsByteStream
-          Add-Content $Env:GITHUB_OUTPUT "KEY_FILE=$KeyFile"
-      - name: Configure
-        working-directory: build
-        shell: pwsh
-        run: |
-          $args = @(
-            "-DCMAKE_BUILD_TYPE=${{matrix.build-type}}"
-            "-DCMAKE_INSTALL_PREFIX=${{github.workspace}}/com.fredemmott.audiooutputswitch.sdPlugin"
-            "-DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}}"
-            "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.11"
-          )
-          if ( "${{matrix.os}}" -eq "windows" ) {
-            $args += "-DCMAKE_SYSTEM_VERSION=10.0.22621.0"
-          }
-          $KeyFile = "${{steps.signing-key.outputs.KEY_FILE}}"
-          if ( "$keyPath" -ne "" ) {
-            $args += "-DSIGNTOOL_KEY_ARGS=/f;$KeyFile"
-          }
-          cmake ${{github.workspace}}/source @args
-      - name: Compile
-        working-directory: build
-        run: cmake --build . --config ${{matrix.build-type}} --parallel
-      - name: Split out MacOS debug symbols
-        if: matrix.os == 'macos' && matrix.build-type == 'RelWithDebInfo'
-        working-directory: build/Sources
-        run: |
-          dsymutil sdaudioswitch 
-          strip -x -S sdaudioswitch
-      - name: Isolate artifacts
-        shell: pwsh
-        if: matrix.build-type == 'RelWithDebInfo'
-        run: |
-          $Out = "${{runner.temp}}/out"
-          New-Item -ItemType "directory" -Path "${{runner.temp}}/out"
-          Switch ("${{matrix.os}}")
-          {
-            'macos' {
-              Copy-Item build/Sources/sdaudioswitch $Out/
-              Copy-Item -Recurse build/Sources/sdaudioswitch.dSYM $Out/sdaudioswitch.dSYM
-            }
-            'windows' {
-              Copy-Item build/Sources/${{matrix.build-type}}/*.exe $Out/
-              Copy-Item build/Sources/${{matrix.build-type}}/*.pdb $Out/
-            }
-          }
-          Get-ChildItem $Out
-      - name: Upload artifacts
-        if: matrix.build-type == 'RelWithDebInfo'
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-${{matrix.os}}-${{matrix.arch}}-${{matrix.build-type}}
-          path: ${{runner.temp}}/out
-    strategy:
-      matrix:
-        target: [windows, macos-arm64, macos-x86_64]
-        build-type: [RelWithDebInfo, Debug]
-        include:
-          - target: windows
-            os: windows
-            arch: x86_64
-            os_version: latest
-          - target: macos-arm64
-            os: macos
-            arch: arm64
-            os_version: 12 # 'latest' is current 11, need better C++20 support
-          - target: macos-x86_64
-            os: macos
-            arch: x86_64
-            os_version: 12
+    name: Build
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
   package:
     name: Package
     needs: build
