@@ -1,35 +1,35 @@
 name: Prepare release
 on:
-    workflow_call:
+  workflow_call:
 jobs:
-    release:
-        name: Release
-        runs-on: ubuntu-latest
-        steps:
-        - uses: actions/download-artifact@v4
-          with:
-            path: ${{runner.temp}}/artifacts
-        - name: Display downloaded files
-          run: ls -R
-          working-directory: ${{runner.temp}}/artifacts
-        - name: Check if this is a release push
-          id: ref
-          run: |
-            if echo ${{github.ref}} | grep --silent refs/tags/v; then
-              echo "is-release=true" >> $GITHUB_OUTPUT
-              echo "tag=$(echo ${{github.ref}} | awk -F/ '{print $NF}')" >> $GITHUB_OUTPUT
-            else
-              echo "is-release=false" >> $GITHUB_OUTPUT
-            fi
-        - name: Create Draft Release
-          id: create-release
-          if: steps.ref.outputs.is-release == 'true'
-          uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
-          with:
-            tag_name: ${{steps.ref.outputs.tag}}
-            prerelease: ${{contains(github.ref_name, '-')}}
-            draft: true
-            files: |
-              ${{runner.temp}}/artifacts/package-sdplugin/*.streamDeckPlugin
-              ${{runner.temp}}/artifacts/build-windows-x86_64-RelWithDebInfo/*.pdb
-              ${{runner.temp}}/artifacts/package-macos-DebugSymbols/*.dSYM.zip
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        path: ${{runner.temp}}/artifacts
+    - name: Display downloaded files
+      run: ls -R
+      working-directory: ${{runner.temp}}/artifacts
+    - name: Check if this is a release push
+      id: ref
+      run: |
+        if echo ${{github.ref}} | grep --silent refs/tags/v; then
+          echo "is-release=true" >> $GITHUB_OUTPUT
+          echo "tag=$(echo ${{github.ref}} | awk -F/ '{print $NF}')" >> $GITHUB_OUTPUT
+        else
+          echo "is-release=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Create Draft Release
+      id: create-release
+      if: steps.ref.outputs.is-release == 'true'
+      uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+      with:
+        tag_name: ${{steps.ref.outputs.tag}}
+        prerelease: ${{contains(github.ref_name, '-')}}
+        draft: true
+        files: |
+          ${{runner.temp}}/artifacts/package-sdplugin/*.streamDeckPlugin
+          ${{runner.temp}}/artifacts/build-windows-x86_64-RelWithDebInfo/*.pdb
+          ${{runner.temp}}/artifacts/package-macos-DebugSymbols/*.dSYM.zip
