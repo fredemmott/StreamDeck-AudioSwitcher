@@ -93,6 +93,7 @@ jobs:
     needs: build
     uses: ./.github/workflows/package.yml
   release:
+    name: Release
     needs: package
     uses: ./.github/workflows/release.yml
     secrets: inherit

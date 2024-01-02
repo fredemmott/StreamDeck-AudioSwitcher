@@ -3,6 +3,7 @@ on:
     workflow_call:
 jobs:
     release:
+        name: Release
         runs-on: ubuntu-latest
         steps:
         - uses: actions/download-artifact@v4
