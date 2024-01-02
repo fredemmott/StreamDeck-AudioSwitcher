@@ -49,7 +49,7 @@ jobs:
           - name: Upload MacOS debug symbols
             uses: actions/upload-artifact@v4
             with:
-              name: sdaudioswitch-lipo-dsym
+              name: package-macos-DebugSymbols
               path: ${{runner.temp}}/dsym/sdaudioswitch.dSYM.zip
           - name: Copy executables
             working-directory: ${{runner.temp}}
@@ -72,5 +72,5 @@ jobs:
           - name: Upload .streamDeckPlugin
             uses: actions/upload-artifact@v4
             with:
-              name: com.fredemmott.audiooutputswitch.streamDeckPlugin
+              name: package-sdplugin
               path: com.fredemmott.audiooutputswitch.streamDeckPlugin

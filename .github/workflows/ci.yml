@@ -88,11 +88,11 @@ jobs:
             os: macos
             arch: x86_64
             os_version: 12
-  streamDeckPlugin:
+  package:
     name: Package
     needs: build
-    uses: ./.github/workflows/sdplugin.yml
+    uses: ./.github/workflows/package.yml
   release:
-    needs: streamDeckPlugin
+    needs: package
     uses: ./.github/workflows/release.yml
     secrets: inherit
