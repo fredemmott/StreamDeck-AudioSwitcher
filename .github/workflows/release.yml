@@ -29,6 +29,6 @@ jobs:
             prerelease: ${{contains(github.ref_name, '-')}}
             draft: true
             files: |
-              ${{runner.temp}}/artifacts/com.fredemmott.audiooutputswitch.streamDeckPlugin/com.fredemmott.audiooutputswitch.streamDeckPlugin
-              ${{runner.temp}}/artifacts/DebugSymbols-windows-RelWithDebInfo/sdaudioswitch.pdb
-              ${{runner.temp}}/artifacts/sdaudioswitch-lipo-dsym/sdaudioswitch.dSYM.zip
+              ${{runner.temp}}/artifacts/package-sdplugin/*.streamDeckPlugin
+              ${{runner.temp}}/artifacts/build-windows-x86_64-RelWithDebInfo/*.pdb
+              ${{runner.temp}}/artifacts/package-macos-DebugSymbols/*.dSYM.zip
