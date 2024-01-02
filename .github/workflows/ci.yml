@@ -47,8 +47,7 @@ jobs:
         run: |
           dsymutil sdaudioswitch 
           strip -x -S sdaudioswitch
-      - name: Isolate artifacts (MacOS)
-        if: matrix.os == 'macos' && matrix.build-type == 'RelWithDebInfo'
+      - name: Isolate artifacts
         shell: pwsh
         run: |
           $Out = "${{runner.temp}}/out"
