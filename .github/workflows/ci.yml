@@ -60,8 +60,8 @@ jobs:
               Copy-Item -Recurse build/Sources/sdaudioswitch.dSYM $Out/sdaudioswitch.dSYM
             }
             'windows' {
-              Copy-Item build/Sources/*.exe $Out/
-              Copy-Item build/Sources/*.pdb $Out/
+              Copy-Item build/Sources/${{matrix.build-type}}/*.exe $Out/
+              Copy-Item build/Sources/${{matrix.build-type}}/*.pdb $Out/
             }
           }
           Get-ChildItem $Out
