@@ -47,30 +47,30 @@ jobs:
         run: |
           dsymutil sdaudioswitch 
           strip -x -S sdaudioswitch
-      - name: Upload MacOS Executable
-        if: matrix.os == 'macos' && matrix.build-type != 'Debug'
-        uses: actions/upload-artifact@v4
-        with:
-          name: MacOS-${{matrix.arch}}-${{matrix.build-type}}
-          path: build/Sources/sdaudioswitch
-      - name: Upload MacOS debug symbols
+      - name: Isolate artifacts (MacOS)
         if: matrix.os == 'macos' && matrix.build-type == 'RelWithDebInfo'
+        shell: pwsh
+        run: |
+          $Out = "${{runner.temp}}/out"
+          New-Item -ItemType "directory" -Path "${{runner.temp}}/out"
+          Switch ("${{matrix.os}}")
+          {
+            'macos' {
+              Copy-Item build/Sources/sdaudioswitch $Out/
+              Copy-Item -Recurse build/Sources/sdaudioswitch.dSYM $Out/sdaudioswitch.dSYM
+            }
+            'windows' {
+              Copy-Item build/Sources/*.exe $Out/
+              Copy-Item build/Sources/*.pdb $Out/
+            }
+          }
+          Get-ChildItem $Out
+      - name: Upload artifacts
+        if: matrix.build-type == 'RelWithDebInfo'
         uses: actions/upload-artifact@v4
         with:
-          name: DebugSymbols-${{matrix.os}}-${{matrix.arch}}-${{matrix.build-type}}.dSYM
-          path: build/Sources/sdaudioswitch.dSYM
-      - name: Upload Windows Executable
-        if: matrix.os == 'windows' && matrix.build-type != 'Debug'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Windows-${{matrix.build-type}}
-          path: build/Sources/${{matrix.build-type}}/sdaudioswitch.exe
-      - name: Upload Windows Debug Symbols
-        if: matrix.os == 'windows' && matrix.build-type == 'RelWithDebInfo'
-        uses: actions/upload-artifact@v4
-        with:
-          name: DebugSymbols-${{matrix.os}}-${{matrix.build-type}}
-          path: build/Sources/${{matrix.build-type}}/sdaudioswitch.pdb
+          name: build-${{matrix.os}}-${{matrix.arch}}-${{matrix.build-type}}
+          path: ${{runner.temp}}/out
     strategy:
       matrix:
         target: [windows, macos-arm64, macos-x86_64]
