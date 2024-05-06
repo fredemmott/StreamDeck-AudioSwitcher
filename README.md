@@ -31,6 +31,9 @@ Use a multi-action switch, not a normal multi-action:
 
 ![image](https://user-images.githubusercontent.com/360927/206601016-e8785e16-edf9-4c6e-8829-1c54b9acaeaa.png)
 
+## MacOS: "Sound effects" aren't changing, or are changing when I don't want them to
+
+This is a MacOS bug that only Apple can fix.
 
 # Getting Help
 
