@@ -37,7 +37,7 @@ This is a MacOS bug that only Apple can fix.
 
 # Getting Help
 
-Check [the troubleshooting guide](TROUBLESHOOTING.md) guide; I am unable to offer support, or to act on bug reports or feature requests. Do not contact me for help via any means, including GitHub, Discord, Twitter, Reddit, or email. This software is used by many, and I do generally fix it when something changes to break it, but I'm not able to help with anyone's specific issues.
+Check [the troubleshooting guide](TROUBLESHOOTING.md) guide. I make this for my own use, and share in the hope that others find it useful - I am unable to offer support, or to act on bug reports or feature requests. Do not contact me for help via any means, including GitHub, Discord, Twitter, Reddit, or email. This software is used by many, and I do generally fix it when something changes to break it, but I do not guarantee this, and I'm not able to help with anyone's specific issues.
 
 If 'fuzzy matching' is required - or not functioning properly for you - ask your device manufacturer to fix their device/drivers to not change device IDs; Microsoft requires that these do not change.
 
